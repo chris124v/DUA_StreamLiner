@@ -9,6 +9,7 @@ Caso 1 de Diseño de Software.
 
 ---
 ### Flujo de trabajo
+## Paso 0. El usuario elige si quiere hacer el tramite de exportación o importación (imporante para saber cual plantilla usar).
 ## Paso 1. Tiene un archivo "plantilla oficial vigente del DUA" definido por el ministerio de hacienda y otros "n" archivos (puede ser excel, word, pdf, imagenes) en un folder path (variable de entorno).
 ## Paso 2. Separar archivos en 4 categorias (imagen, excel, word, pdf).
 ## Paso 3. Revisar si la version de la plantilla usada para el hash de comparacion sigue siendo la más actualizada, si no es asi hacer el paso 3.1. para actualizarla.
