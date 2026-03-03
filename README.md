@@ -50,6 +50,11 @@ En general estos permisos se consiguen en su respectivo ministerio, por ejemplo,
 9. Packing List: https://www.scribd.com/document/649777725/FORMATO-PACKING-LIST-2022
 10. Certificado de Origen: https://www.comex.go.cr/media/2481/01_anexo-316-certificado-de-origen.pdf
 11. Certificado de Origen: https://www.docsity.com/es/docs/certificado-de-origen-1/5523092/
-12. 
+12. Valor en Aduana Ejemplo: https://www.scribd.com/doc/273864348/Hoja-de-Calculo-Para-Valor-en-Aduana
+
+---
 
 **Documentos DUA Llenados**
+En este apartado incluimos links de documentos DUA llenos.
+
+1. Instructivo Costa Rica - Ecuador: https://www.vuce.cr/wp-content/uploads/2024/04/Guia-de-llenado-CO-Ecuador.pdf
