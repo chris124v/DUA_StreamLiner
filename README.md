@@ -8,6 +8,34 @@ El problema al que esta orientado este proyecto es el resolver los tramites pert
 Caso 1 de Diseño de Software. 
 
 ---
+### Flujo de trabajo
+Paso 1. Tiene un archivo "plantilla oficial vigente del DUA" definido por el ministerio de hacienda y otros "n" archivos (puede ser excel, word, pdf, imagenes) en un folder path (variable de entorno).
+Paso 2. Separar archivos en 4 categorias (imagen, excel, word, pdf).
+Paso 3. Revisar si la version de la plantilla usada para el hash de comparacion sigue siendo la más actualizada, si no es asi hacer el paso 3.1. para actualizarla.
+Paso 3.1. Recorrer la plantilla usando division en bloques, mediante embedding y se guarda las secciones encontradas en un hash para comparacion luego.
+Paso 4. Se recorren los archivos word (mediante division por bloques y embedding) y se compara las secciones con las de la plantilla (cada seccion tendra simitud de palabras con sentence berte) y se guarda en un diccionario la seccion, porcentaje de similitud y el bloque de textro)
+Paso 5. Se realiza el mismo proceso para los archivos excel, pdf pero con las distinciones de formato.
+Paso 6. Se realiza el mismo proceso para las imagenes mediante OCR avanzado.
+Paso 7. Adicionalmente, mediante modelos de IA entrenados para comprender terminología aduanera, el sistema identificará y clasificará automáticamente dentro de cada bloque los siguientes campos clave:
+Datos del importador/exportador
+
+- Información del proveedor
+- Descripción comercial y arancelaria de mercancías
+- Cantidades, pesos y valores FOB/CIF
+- Incoterms
+- Información de transporte
+- Número y fecha de factura
+- País de origen y procedencia
+- Régimen aduanero aplicable
+
+De esta manera, no solo se realiza una comparación estructural por similitud semántica, sino también una extracción de información para el llenado automatizado del documento aduanero.
+
+Paso 7. Se eligen 2 textos con mayor porcentaje de similud, tomando en cuenta a que categoria pertenecen mediante una clasificacion one-hot encoding que seran enviados a una api de IA para elegir que parte del documento será llenado con ese bloque de datos y dará un porcentaje de seguridad (30% >= x ; advertencia al usuario tipo rojo, 30% < x <= 70% ; advetencia tipo amarillo, x > 70% ; advertencia color verde), guardando todo en el diccionario con formato {bloque al que matcheo en la plantilla: advertencia, datos del bloque}
+Paso 8. Se pone todos los valores del diccionario conforme a la plantilla y se avisa al usuario en cada elemento su porcentaje de seguridad.
+
+
+
+
 
 ### Links
 
