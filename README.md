@@ -88,3 +88,13 @@ En general estos permisos se consiguen en su respectivo ministerio, por ejemplo,
 En este apartado incluimos links de documentos DUA llenos.
 
 1. Instructivo Costa Rica - Ecuador: https://www.vuce.cr/wp-content/uploads/2024/04/Guia-de-llenado-CO-Ecuador.pdf
+
+---
+
+**Diseños de soluciones hechas que hagan algo similar**
+En Costa Rica no hay actualmente soluciones de este estilo, pero en diferentes paises hay similutes para el llenado automatico de documentos de aduanas.
+
+1. ACE Secure Data Portal: https://ace.cbp.gov/s/login/?ec=302&startURL=%2Fs%2F
+La plataforma oficial de EE. UU. para carga electrónica de datos aduaneros. Todos los datos comerciales (incluyendo declaraciones de importación) se ingresan por aquí.
+Permite subir datos estructurados para entrada de mercancías, ISF 10+2, entre otros.
+
