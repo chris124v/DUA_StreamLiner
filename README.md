@@ -30,7 +30,8 @@ Datos del importador/exportador
 
 De esta manera, no solo se realiza una comparación estructural por similitud semántica, sino también una extracción de información para el llenado automatizado del documento aduanero.
 
-## Paso 8. Se eligen 2 textos con mayor porcentaje de similud, tomando en cuenta a que categoria pertenecen mediante una clasificacion one-hot encoding que seran enviados a una api de IA para elegir que parte del documento será llenado con ese bloque de datos y dará un porcentaje de seguridad (30% >= x ; advertencia al usuario tipo rojo, 30% < x <= 70% ; advetencia tipo amarillo, x > 70% ; advertencia color verde), guardando todo en el diccionario con formato {bloque al que matcheo en la plantilla: advertencia, datos del bloque}
+## Paso 8. Se eligen 2 textos con mayor porcentaje de similud, tomando en cuenta a que categoria pertenecen mediante una clasificacion one-hot encoding que seran enviados a una api de IA para elegir que parte del documento será llenado con ese bloque de datos y dará un porcentaje de seguridad, guardando todo en el diccionario con formato {bloque al que matcheo en la plantilla: advertencia, datos del bloque}
+- P(X = x) = (30% >= x ; advertencia al usuario tipo rojo, 30% < x <= 70% ; advetencia tipo amarillo, x > 70% ; advertencia color verde).
 ## Paso 9. Se pone todos los valores del diccionario conforme a la plantilla y se avisa al usuario en cada elemento su porcentaje de seguridad.
 
 
