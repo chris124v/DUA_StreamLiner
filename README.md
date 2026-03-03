@@ -39,7 +39,17 @@ Además de estos documentos, necesitará de la clasificación arancelaria de la 
 
 En general estos permisos se consiguen en su respectivo ministerio, por ejemplo, si se trata de cosméticos y medicamentos debe solicitar el permiso al Ministerio de Salud.  Según, la Cámara de Comercio de Costa Rica (2016, p. 3), una vez que se cuenten con los permisos (si se requieren) la Agencia o Agente de aduanas confeccionarán la Declaración Aduanera de Importación y la deberán presentar ante la Aduana por la cual ingresarán los productos.  
 
-1. https://procomer.com/wp-content/uploads/2025/04/INSTRUCTIVO-DUAS-EXPORTACIONES-3.0.pdf
-2. https://piea.campus.co.cr/wp-content/uploads/2021/09/Gu%C3%ADa-Requisitos-b%C3%A1sicos-para-realizar-importaciones-y-exportaciones-en-Costa-Rica..pdf
+1. Instructivo: https://procomer.com/wp-content/uploads/2025/04/INSTRUCTIVO-DUAS-EXPORTACIONES-3.0.pdf
+2. Casos de Uso en CR: https://piea.campus.co.cr/wp-content/uploads/2021/09/Gu%C3%ADa-Requisitos-b%C3%A1sicos-para-realizar-importaciones-y-exportaciones-en-Costa-Rica..pdf
+3. Formato de Factura Comercial: https://www.scribd.com/document/458411170/factura-comercial
+4. Modelo de Factura Comercial Llenada: https://www.slideshare.net/slideshow/modelo-de-factura-comercial-commercial-invoice-llenada/81392481
+5. Documentos de Transporte Internacional: https://globalnegotiator.com/blog/documentos-de-transporte-internacional/
+6. Bill of Landing: https://www.scribd.com/document/484317652/l-Documento-de-Transporte-Maritimo
+7. Airway Bill: https://www.dripcapital.com/es-mx/recursos/blog/air-waybill-que-es
+8. CMR: https://www.globalnegotiator.com/files/CMR-carta-de-porte-modelo-ejemplo.pdf
+9. Packing List: https://www.scribd.com/document/649777725/FORMATO-PACKING-LIST-2022
+10. Certificado de Origen: https://www.comex.go.cr/media/2481/01_anexo-316-certificado-de-origen.pdf
+11. Certificado de Origen: https://www.docsity.com/es/docs/certificado-de-origen-1/5523092/
+12. 
 
 **Documentos DUA Llenados**
