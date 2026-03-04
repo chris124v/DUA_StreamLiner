@@ -20,6 +20,7 @@ Caso 1 de Diseño de Software.
 - Paso 7. Mediante modelos de IA entrenados para comprender terminología aduanera, el sistema identificará y clasificará automáticamente dentro de cada bloque los siguientes campos clave: Datos del importador/exportador, Información del proveedor, Descripción comercial y arancelaria de mercancías, Cantidades, pesos y valores FOB/CIF, Incoterms, Información de transporte, Número y fecha de factura, País de origen y procedencia, Régimen aduanero aplicable.  Una vez se extrae el campo se hace una validacion sintactica sabiendo que el pais sea valido, fecha valida, etc. 
 
 - Paso 8. Se eligen los 2 textos con mayor porcentaje de similitud, tomando en cuenta la categoría documental mediante clasificación one-hot encoding. Estos serán enviados a una API de IA para determinar: Qué parte específica del DUA será llenada con ese bloque. Porcentaje de seguridad. 
+
 **Escala de advertencia**
 x ≤ 30% → Advertencia roja
 30% < x ≤ 70% → Advertencia amarilla
