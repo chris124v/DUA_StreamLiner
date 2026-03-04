@@ -121,9 +121,30 @@ Otros aspectos
 
 --- 
 
-# Backend design 
+# 2. Backend design 
 
-# Data Design
+# 3. Data Design
 
+# 4. Stack de Tecnologias
+
+Consideraciones para decidir el stack de tecnología
+
+## 4.1 Medio de interacción:
+
+### Mobile:
+- Experiencia enriquecida en animación, movimiento, manejo del espacio físico
+- Grabación, video, uso de sensores, giroscopios, gps
+- Hay una dependencia importante con el hardware
+- Movilidad: comodidad y que las personas puedan accionar el sistema "at hand"
+- Costo: Desarrollo nativo iOS y Android, o si bien, es híbrido como por ejemplo ReactNative, Flutter, Kotlin multiplatform. Asume que programo un solo código y con ello genero Android y iOS, siempre se requiere ajuste, no es real que ahora con un 50% del esfuerzo hago 2 plataformas, aproximadamente es un 70% a 80%. Es decir, si un proyecto de iOS dura 7 meses y el mismo app en android se dura 6 meses, entonces usar un híbrido no significa 6.5 meses de trabajo, si no más bien, de un 9 a 11 meses.
+
+Los desarrolladores, necesito expertos en iOS, o en Android, salario, o será que con AI no hace falta que sea tan mobile expert. Un híbrido me amplía la capacidad de obtener desarrolladores. Ademas de un modo de distribución y updates, aplicaciones certificadas por un store, y tienen un proceso de aprobación
+
+### Web app:
+- Extensibilidad del uso, porque al ser web puedo tener más alcance y acceso a las personas
+- Abierto a multi tamaños, experiencia responsive, puedo vivir el sistema en el teléfono, en la compu en la tablet
+- Sistemas medianamente interactivos
+- Es más accesible conseguir desarrolladores en diferentes lenguajes
+- Tengo tres paradigmas: static applications, CSR client side rendering consume recursos del lado del cliente, aliviando la carga de los servidores lo que reduce costo de servidor, me permite atender a mucho más usuarios, sin embargo es más inseguro. Server side rendering, en ese caso los y la generación del HTML se hace del lado del servidor, por ende todo el código JS y CSS
 
 
