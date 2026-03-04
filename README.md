@@ -97,6 +97,7 @@ Permite subir datos estructurados para entrada de mercancías, ISF 10+2, entre o
 Tecnología de frontend, de seguridad, librerías de terceros, frameworks, hosting; todos con su respectiva versión
 
 - Application Type: Web App
+- Web Framework: ReactJS
 
 ## 1.2 UX UI analysis
 Incluye los atributos de usabilidad deseables del aplicativo, un diseño preliminar del UX a modo wireframes, y las evidencias de las pruebas de UX con usuarios reales que validan diseño diseño preliminar
