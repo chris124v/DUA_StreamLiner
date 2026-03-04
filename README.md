@@ -9,32 +9,24 @@ Caso 1 de Diseño de Software.
 
 ---
 ## Flujo de trabajo
-- Paso 0. El usuario elige si quiere hacer el tramite de exportación o importación (imporante para saber cual plantilla usar).
-- Paso 1. Tiene un archivo "plantilla oficial vigente del DUA" definido por el ministerio de hacienda y otros "n" archivos (puede ser excel, word, pdf, imagenes) en un folder path (variable de entorno).
-- Paso 2. Separar archivos en 4 categorias (imagen, excel, word, pdf).
-- Paso 3. Revisar si la version de la plantilla usada para el hash de comparacion sigue siendo la más actualizada, si no es asi hacer el paso 3.1. para actualizarla.
-- Paso 3.1. Recorrer la plantilla usando division en bloques, mediante embedding y se guarda las secciones encontradas en un hash para comparacion luego.
-- Paso 4. Se recorren los archivos word (mediante division por bloques y embedding) y se compara las secciones con las de la plantilla (cada seccion tendra simitud de palabras con sentence berte) y se guarda en un diccionario la seccion, porcentaje de similitud y el bloque de textro)
-- Paso 5. Se realiza el mismo proceso para los archivos excel, pdf pero con las distinciones de formato.
-- Paso 6. Se realiza el mismo proceso para las imagenes mediante OCR avanzado.
-- Paso 7. Adicionalmente, mediante modelos de IA entrenados para comprender terminología aduanera, el sistema identificará y clasificará automáticamente dentro de cada bloque los siguientes campos clave:
+- Paso 0. El usuario elige si quiere hacer el trámite de exportación o importación (importante para saber cuál plantilla usar y qué campos serán obligatorios).
+- Paso 1. Se tiene un archivo "plantilla oficial vigente del DUA" definido por el Ministerio de Hacienda y otros "n" archivos (pueden ser excel, word, pdf, imágenes) en un folder path (variable de entorno).
+- Paso 2.Separar archivos en 4 categorías: Imagen, Excel, Word, PDF, Adicionalmente, antes de cualquier embedding, se realiza una clasificación temática del archivo completo, por ejemplo: Factura comercial, Documento de transporte, Certificado de origen, Packing list, Documento financiero, Otro. Esto permitirá restringir búsquedas posteriores por tipo de documento y evitar comparación exhaustiva innecesaria.
+- Paso 3. Revisar si la versión de la plantilla usada para el hash de comparación sigue siendo la más actualizada. Si no es así, hacer el paso 3.1.
+- Paso 3.1. Recorrer la plantilla usando división en bloques mediante embedding y guardar las secciones encontradas en un hash para comparación posterior. Cada bloque tendrá: hash del bloque, embedding, tipo de campo esperado, reglas de validación, tipo de renderizado (texto, tabla, código, condicional).
+- Paso 4. Se recorren los archivos Word mediante división por bloques y embedding. Antes de comparar contra toda la plantilla: Se indexan los bloques en una estructura tipo vector store por categoría documental. De esta manera funciona como un indice invertido, si ocupas - pais de origen sabes que debes buscar en certificado de origen.
+- Paso 5. Se realiza el mismo proceso para archivos Excel y PDF, considerando sus particularidades estructurales.
+- Paso 6. Se realiza el mismo proceso para imágenes mediante OCR avanzado.
+- Paso 7. Mediante modelos de IA entrenados para comprender terminología aduanera, el sistema identificará y clasificará automáticamente dentro de cada bloque los siguientes campos clave: Datos del importador/exportador, Información del proveedor, Descripción comercial y arancelaria de mercancías, Cantidades, pesos y valores FOB/CIF, Incoterms, Información de transporte, Número y fecha de factura, País de origen y procedencia, Régimen aduanero aplicable.  Una vez se extrae el campo se hace una validacion sintactica sabiendo que el pais sea valido, fecha valida, etc. 
 
-**Datos del importador/exportador**
+- Paso 8. Se eligen los 2 textos con mayor porcentaje de similitud, tomando en cuenta la categoría documental mediante clasificación one-hot encoding. Estos serán enviados a una API de IA para determinar: Qué parte específica del DUA será llenada con ese bloque. Porcentaje de seguridad. 
+**Escala de advertencia**
+x ≤ 30% → Advertencia roja
+30% < x ≤ 70% → Advertencia amarilla
+x > 70% → Advertencia verde
 
-- Información del proveedor
-- Descripción comercial y arancelaria de mercancías
-- Cantidades, pesos y valores FOB/CIF
-- Incoterms
-- Información de transporte
-- Número y fecha de factura
-- País de origen y procedencia
-- Régimen aduanero aplicable
-
-De esta manera, no solo se realiza una comparación estructural por similitud semántica, sino también una extracción de información para el llenado automatizado del documento aduanero.
-
-- Paso 8. Se eligen 2 textos con mayor porcentaje de similud, tomando en cuenta a que categoria pertenecen mediante una clasificacion one-hot encoding que seran enviados a una api de IA para elegir que parte del documento será llenado con ese bloque de datos y dará un porcentaje de seguridad, guardando todo en el diccionario con formato {bloque al que matcheo en la plantilla: advertencia, datos del bloque} P(X = x) = (30% >= x ; advertencia al usuario tipo rojo, 30% < x <= 70% ; advetencia tipo amarillo, x > 70% ; advertencia color verde).
-- Paso 9. Se pone todos los valores del diccionario conforme a la plantilla y se avisa al usuario en cada elemento su porcentaje de seguridad.
-
+- Paso 9. Se debe considerar que tipo de campo debe llenar (texto, si hay un codigo obligatorio, tabla dinamica), el formato (de las fechas, conversion de unidades), motor de reglas tomando en cuenta si tiene "x" ocupa seccion "y", despues hacer la generacion estructurada del documento respetando layout original (tendra un color dependiendo de la confianza)
+- Paso 10. Para el control de reprocesamiento y optimización de costos, Para evitar reprocesar todo cuando se agregan o corrigen archivos se tendra que cada bloque guarde hash del bloque y embedding, cuando se agrega un archivo se calcula el hash y compara con existentes, si ya existe se reusa el embedding.
 ---
 
 ### Links
