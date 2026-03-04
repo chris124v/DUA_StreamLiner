@@ -116,6 +116,7 @@ Tecnología de frontend, de seguridad, librerías de terceros, frameworks, hosti
 - CI/CD Tools Available: GitHub Actions
 - Environments: Development, Stage and Production
 - Environment deployments: GitHub Environments
+- Observability: Google Cloud Logging
 
 ## 1.2 UX UI analysis
 Incluye los atributos de usabilidad deseables del aplicativo, un diseño preliminar del UX a modo wireframes, y las evidencias de las pruebas de UX con usuarios reales que validan diseño diseño preliminar
