@@ -96,24 +96,26 @@ Permite subir datos estructurados para entrada de mercancías, ISF 10+2, entre o
 ## 1.1 Technology stack 
 Tecnología de frontend, de seguridad, librerías de terceros, frameworks, hosting; todos con su respectiva versión
 
-- Applicacion type: web app
-- Web framework: reactjs version 19.2
+- Applicacion type:  Server Side Rendering Web App
+- Web framework: ReactJS version 19.2
 - NodeJs version 21
 - Typescript 5.9.3
-- Unit testing: jest 30.2.0
-- - Zod 4.3.6 to data validation
-- Prettier 3.8.1
-- ESlint 10.2
-- Integration testing: playwright 1.58.2
-- Deployment: Infrastructura no administrada (vercel) no nos permite controlar tanto el costo y recursos pero si trae simplitud al realizarlo
-- Cloud Service: Azure and cloud services
-- Hosted by Azure App service
-- Code repositories by Azure DevOps
-- CI CD by Azure DevOps pipelines
-- Enviroments: development, stage and production
-- Enviroment deployments Azure DevOps Enviroments
-- Observability by Azure Application Insights SDK
-- Automated code tasks by Husky 9.1.7
+- Unit testing: Jest 30.2.0
+- Integration testing: Playwright 1.58.2
+- Code quality: ESLint 9.18.0
+- Code formatter: Prettier 3.3.3
+- Git hooks: Husky 9.1.7 + lint-staged 15.2.10
+- Build tool: Vite 6.0.4
+- Validation library: Zod 3.23.8
+- Styling framework: Tailwind CSS 3.4.17
+- Environment variables management: dotenv 16.4.5
+- Deployment: Infrastructura no administrada (Vercel)
+- Hosting: Google Cloud Platform
+- Recovery Procedures: Google App Engine
+- Code Repository Services Available: GitHub
+- CI/CD Tools Available: GitHub Actions
+- Environments: Development, Stage and Production
+- Environment deployments: GitHub Environments
 
 ## 1.2 UX UI analysis
 Incluye los atributos de usabilidad deseables del aplicativo, un diseño preliminar del UX a modo wireframes, y las evidencias de las pruebas de UX con usuarios reales que validan diseño diseño preliminar
