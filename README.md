@@ -96,28 +96,24 @@ Permite subir datos estructurados para entrada de mercancías, ISF 10+2, entre o
 ## 1.1 Technology stack 
 Tecnología de frontend, de seguridad, librerías de terceros, frameworks, hosting; todos con su respectiva versión
 
-- Applicacion type:  Server Side Rendering Web App
-- Web framework: ReactJS version 19.2
-- NodeJs version 21
-- Typescript 5.9.3
-- Unit testing: Jest 30.2.0
-- Integration testing: Playwright 1.58.2
-- Code quality: ESLint 9.18.0
-- Code formatter: Prettier 3.3.3
-- Git hooks: Husky 9.1.7 + lint-staged 15.2.10
-- Build tool: Vite 6.0.4
-- Validation library: Zod 3.23.8
-- Styling framework: Tailwind CSS 3.4.17
-- Environment variables management: dotenv 16.4.5
-- Deployment: Infrastructura no administrada (Vercel)
-- Hosting: Google Cloud Platform
-- Recovery Procedures: Google App Engine
-- Code Repository Services Available: GitHub
-- CI/CD Tools Available: GitHub Actions
-- Environments: Development, Stage and Production
-- Environment deployments: GitHub Environments
-- Observability: Google Cloud Logging
-
+- Application type: Server Side Rendering (SSR) Web App
+- Web framework: ReactJS 19.2
+- Web server: NodeJS 21
+- Coding Language: TypeScript 5.9.3
+- Unit testing framework: Jest 30.2.0
+- Data validation framework: Zod 3.23.8
+- Code prettier framework: Prettier 3.3.3
+- Code style framework: ESLint 9.18.0
+- Integration testing tools: Playwright 1.58.2
+- Cloud service: Google Cloud Platform
+- Hosted services within the cloud service: Google App Engine
+- Code repositories service: GitHub
+- Code automation task tool: GitHub Actions
+- CI CD pipelines technology: GitHub Actions
+- Environments: Development, Stage, Production
+- Environment deployments tools: GitHub Environments
+- Observability framework: Google Cloud Operations Suite (Cloud Logging + Cloud Monitoring)
+  
 ## 1.2 UX UI analysis
 Incluye los atributos de usabilidad deseables del aplicativo, un diseño preliminar del UX a modo wireframes, y las evidencias de las pruebas de UX con usuarios reales que validan diseño diseño preliminar
 
