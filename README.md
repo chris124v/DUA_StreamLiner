@@ -94,7 +94,9 @@ Permite subir datos estructurados para entrada de mercancías, ISF 10+2, entre o
 # 1. Frontend design
 
 ## 1.1 Technology stack 
-tecnología de frontend, de seguridad, librerías de terceros, frameworks, hosting; todos con su respectiva versión
+Tecnología de frontend, de seguridad, librerías de terceros, frameworks, hosting; todos con su respectiva versión
+
+- Application Type: Web App
 
 ## 1.2 UX UI analysis
 Incluye los atributos de usabilidad deseables del aplicativo, un diseño preliminar del UX a modo wireframes, y las evidencias de las pruebas de UX con usuarios reales que validan diseño diseño preliminar
@@ -145,6 +147,31 @@ Los desarrolladores, necesito expertos en iOS, o en Android, salario, o será qu
 - Abierto a multi tamaños, experiencia responsive, puedo vivir el sistema en el teléfono, en la compu en la tablet
 - Sistemas medianamente interactivos
 - Es más accesible conseguir desarrolladores en diferentes lenguajes
-- Tengo tres paradigmas: static applications, CSR client side rendering consume recursos del lado del cliente, aliviando la carga de los servidores lo que reduce costo de servidor, me permite atender a mucho más usuarios, sin embargo es más inseguro. Server side rendering, en ese caso los y la generación del HTML se hace del lado del servidor, por ende todo el código JS y CSS
+- Tengo tres paradigmas: static applications, CSR client side rendering consume recursos del lado del cliente, aliviando la carga de los servidores lo que reduce costo de servidor, me permite atender a mucho más usuarios, sin embargo es más inseguro. Server side rendering, en ese caso los y la generación del HTML se hace del lado del servidor, por ende todo el código JS y CSS corre en el server, gasta mas recursos en el server, reduce la cantidad de usuarios que puedo atender simultaneos. Es mas seguro.
+- ReactsJS, Angular, helpers como tailwind, vercel --> AI lovable, vercel AI
+
+### Alcance: 
+- Quienes son los user persona, por ejemplo son especialista de aduana de todo el mundo, por un tema de alcanzar a la mayproa de personas voy por web.
+- Disponibilidad de programadores
+
+### Soporte a futuro:
+- Al escoger el lenguaje, el framework, librerias y proveedores considere el soporte tecnico y la historia del framework.
+- Hay suficiente documentacion, ayuda, canales para obtener soporte del fabricante, garantias
+- Hay que tener en cuenta que tanto podira cambiar el app en el futuro y por cuanto tiempo esperemos que esta tecnologia este activa
+- Entender si la AI tiene un buen soporte para este lenguaje
+
+Como es que se construyen los componentes visuales
+- Como se interfaza diseno con el desarrollo de los componentes
+- Como es que reutilizo los componentes visuales dentro de la app
+- Como se mantiene la consistencia de la marca y el estilo dentro de la app
+
+Rendimiento
+- Benchmarks del framework seleccionado
+- Como controla el responsiveness
+- En que plataformas, sistemas operativos y browsers puede funcionar
+
+Saber las versiones
+- Todo debe ser versionado
+- 
 
 
