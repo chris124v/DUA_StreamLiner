@@ -117,6 +117,39 @@ Tecnología de frontend, de seguridad, librerías de terceros, frameworks, hosti
 ## 1.2 UX UI analysis
 Incluye los atributos de usabilidad deseables del aplicativo, un diseño preliminar del UX a modo wireframes, y las evidencias de las pruebas de UX con usuarios reales que validan diseño diseño preliminar
 
+### Core Bussines Proccesses 
+Describir lo que sucede paso a paso en cada pantalla en terminos de acciones (no hablen de botones, ni listas ni de ningun componente visua, solo acciones de usuario y el resultado de cada accion)
+
+#### Login
+1. El usuario ingresa su login, password y el one time token
+2. Al intentar loguearse si falla, se le presenta un mensaje de usser and pais invalido.
+
+#### Configurar el generador
+
+#### Monitoreo del avance
+
+#### Obtencion del resultado
+
+#### Logout
+
+#### Wireframes
+Con estos pasos anteriores les pido a una IA que me genere los screens y los pego aqui con un titulo, descripcion y la imagen empotrada
+
+
+### UX test results
+- Escoger alguna app para ejecutar el UX test usando esos wireframes.
+- El test se lo van a aplicar en forma remota compartiendo un URL  a 3 estudiantes o amigos
+- Eso va a generar un reporte de resultados
+- Crear un markdown table con los resultados
+- Evidencias
+- Screenshots de cada persona que los testeo 
+
+1. Decirle a alguna AI que nos genere wireframes de la o las pantallas principales
+- Seleccionar el folder
+- Seleccionar la plantilla del DUA
+- Como monitoreo el avance del proceso
+- Como se ve el avance final
+
 ## 1.3 Component design strategy
 Define la técnica y los principios de diseño de componentes del frontend, cómo se logra la reutilización de componentes, cómo se logra centralizar los estilos, el branding, la internacionalización y la responsividad.
 
