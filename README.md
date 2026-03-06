@@ -130,7 +130,7 @@ Describir lo que sucede paso a paso en cada pantalla en terminos de acciones (no
 5. After successful authentication, the user proceeds to the generator configuration stage.
 
 **Imagen de Login**
-![Texto alternativo](images/LoginScreen.png)
+![Imagen del Login](Images/LoginScreen.png)
 
 
 #### Configurar el generador
