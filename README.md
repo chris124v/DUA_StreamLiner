@@ -148,6 +148,10 @@ Describir lo que sucede paso a paso en cada pantalla en terminos de acciones (no
 2. The user can repeatedly check the process status until the generation is completed.
 3. Once the process finishes, the system informs the user that the result is available.
 
+**Imagen del Monitoreo**
+
+![Imagen del Monitoreo](Images/ProgressMonitoring.png)
+
 #### Obtencion del resultado
 1. The user requests the generated DUA document.
 2. The system provides the completed DUA document generated from the processed information and informs the user.
@@ -156,9 +160,17 @@ Describir lo que sucede paso a paso en cada pantalla en terminos de acciones (no
 5. The user confirms the final version of the generated DUA document for further use.
 6. The user downloads the final version of the DUA document.
 
+**Imagen del Resultado**
+
+![Imagen del Resultado](Images/LogoutConfirmation.png)
+
 #### Logout
 1. The user decides to end the session.
 2. The user is returned to the authentication stage and no longer has access to the system.
+
+**Imagen del Logout**
+
+![Imagen del Logout](Images/LogoutConfirmation.png)
 
 #### Wireframes
 Con estos pasos anteriores les pido a una IA que me genere los screens y los pego aqui con un titulo, descripcion y la imagen empotrada
