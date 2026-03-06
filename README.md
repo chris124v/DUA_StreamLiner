@@ -1,5 +1,7 @@
 # Proyecto DUA StreamLiner
-El problema al que esta orientado este proyecto es el resolver los tramites pertinentes del llenado del DUA. La intención propiamente es desarrollar un sistema automatizado que permita a importadores y exportadores simplificar drásticamente el proceso de elaboración del DUA.
+The preparation of the Single Administrative Document (DUA) required for import and export procedures in Costa Rica is currently a largely manual task that demands significant time and attention. The information needed to complete the document is usually spread across several sources such as Excel files, Word documents, PDFs, and scanned images like invoices or certificates. Since these documents often come from different companies and follow varying structures and formats, extracting and organizing the required data becomes a complex process. This forces customs specialists to spend considerable time reviewing documents, interpreting information, and manually transferring data into the official DUA template, increasing the risk of mistakes or inconsistencies.
+
+To improve this process, we propose the development of DUA Streamliner, a system designed to automate much of the work involved in generating the DUA. The system will allow users to simply provide a folder containing all related documents, which will then be processed using tools capable of reading different file formats, extracting text from PDFs, and applying OCR to scanned images. Through AI-based semantic analysis specialized in customs terminology, the system will detect relevant data such as importer details, product information, values, and transport data, and automatically place it into the corresponding fields of the official DUA template defined by the Ministry of Finance. The system will generate a pre-filled Word document and highlight fields that may require verification, enabling experts to focus mainly on reviewing and confirming the information rather than completing the document from scratch.
 
 ## Integrantes 
  * Isaac Villalobos Bonilla, 2024124285
@@ -121,16 +123,33 @@ Incluye los atributos de usabilidad deseables del aplicativo, un diseño prelimi
 Describir lo que sucede paso a paso en cada pantalla en terminos de acciones (no hablen de botones, ni listas ni de ningun componente visua, solo acciones de usuario y el resultado de cada accion)
 
 #### Login
-1. El usuario ingresa su login, password y el one time token
-2. Al intentar loguearse si falla, se le presenta un mensaje de usser and pais invalido.
+1. The user enters their login identifier, password, and one-time authentication token.
+2. The system validates the provided credentials and the token.
+3. If the credentials are incorrect, the system rejects the authentication attempt and informs the user that the username or password is invalid.
+4. If the credentials are valid, the system authenticates the user and grants access to the system.
+5. After successful authentication, the user proceeds to the generator configuration stage.
 
 #### Configurar el generador
+1. The user specifies whether the declaration corresponds to an import or export process.
+2. The user provides the folder path that contains the documents required for the process.
+3. The user starts the automated generation process.
 
 #### Monitoreo del avance
+1. The user checks the status of the generation process.
+2. The user can repeatedly check the process status until the generation is completed.
+3. Once the process finishes, the system informs the user that the result is available.
 
 #### Obtencion del resultado
+1. The user requests the generated DUA document.
+2. The system provides the completed DUA document generated from the processed information and informs the user.
+3. The user reviews the generated document and verifies the extracted information and confidence levels.
+4. If the user identifies incorrect or incomplete information, the user modifies the corresponding data.
+5. The user confirms the final version of the generated DUA document for further use.
+6. The user downloads the final version of the DUA document.
 
 #### Logout
+1. The user decides to end the session.
+2. The user is returned to the authentication stage and no longer has access to the system.
 
 #### Wireframes
 Con estos pasos anteriores les pido a una IA que me genere los screens y los pego aqui con un titulo, descripcion y la imagen empotrada
