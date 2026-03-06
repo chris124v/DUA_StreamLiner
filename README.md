@@ -129,6 +129,10 @@ Describir lo que sucede paso a paso en cada pantalla en terminos de acciones (no
 4. If the credentials are valid, the system authenticates the user and grants access to the system.
 5. After successful authentication, the user proceeds to the generator configuration stage.
 
+**Imagen de Login**
+![Texto alternativo](images/LoginScreen.png)
+
+
 #### Configurar el generador
 1. The user specifies whether the declaration corresponds to an import or export process.
 2. The user provides the folder path that contains the documents required for the process.
