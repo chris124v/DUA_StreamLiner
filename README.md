@@ -162,7 +162,7 @@ Describir lo que sucede paso a paso en cada pantalla en terminos de acciones (no
 
 **Imagen del Resultado**
 
-![Imagen del Resultado](Images/LogoutConfirmation.png)
+![Imagen del Resultado](Images/ResultRetrieval.png)
 
 #### Logout
 1. The user decides to end the session.
@@ -171,9 +171,6 @@ Describir lo que sucede paso a paso en cada pantalla en terminos de acciones (no
 **Imagen del Logout**
 
 ![Imagen del Logout](Images/LogoutConfirmation.png)
-
-#### Wireframes
-Con estos pasos anteriores les pido a una IA que me genere los screens y los pego aqui con un titulo, descripcion y la imagen empotrada
 
 
 ### UX test results
