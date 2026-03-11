@@ -203,6 +203,15 @@ Link del Reporte de Resultados Maze: https://app.maze.co/report/DUA-Test/1fi4m37
 
 ##### Participante 2: Papa de Chris (509834609)
 
+<p align="center">
+  <img src="Images/JHheat.jpg" width="450"/>
+  <img src="Images/JHheat2.jpg" width="450"/>
+</p>
+<p align="center">
+  <img src="Images/JHheat3.jpg" width="450"/>
+  <img src="Images/JHheat4.jpg" width="450"/>
+</p>
+
 ##### Participante 3: Arturo Carranza - Estudiante (509831198)
 
 ##### Participante 4: Jose Zumbado - Estudiante (509847370)
