@@ -214,6 +214,15 @@ Link del Reporte de Resultados Maze: https://app.maze.co/report/DUA-Test/1fi4m37
 
 ##### Participante 3: Arturo Carranza - Estudiante (509831198)
 
+<p align="center">
+  <img src="Images/ACheat.jpg" width="450"/>
+  <img src="Images/ACheat2.jpg" width="450"/>
+</p>
+<p align="center">
+  <img src="Images/ACheat3.jpg" width="450"/>
+  <img src="Images/ACheat4.jpg" width="450"/>
+</p>
+
 ##### Participante 4: Jose Zumbado - Estudiante (509847370)
 
 #### Evidencias
