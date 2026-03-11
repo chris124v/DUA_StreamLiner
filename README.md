@@ -176,6 +176,8 @@ Describir lo que sucede paso a paso en cada pantalla en terminos de acciones (no
 ### UX test results
 En este apartado encontraremos los resultados del test de UX sobre los wireframes usados anteriormente. Las tecnologias que se utilizaron para esto fueron Figma Make y Maze.
 
+Link del website de Figma: https://smoke-chill-65130003.figma.site
+
 Link del Test Maze: https://t.maze.co/509306099
 
 | Pregunta | Tipo | Participante 1 Hermano de Chris (509270528) | Participante 2: Papa de Chris (509834609) | Participante 3: Arturo Carranza - Estudiante (509831198) | Participante 4: Jose Zumbado - Estudiante (509847370) |
@@ -189,6 +191,8 @@ Link del Test Maze: https://t.maze.co/509306099
 Link del Reporte de Resultados Maze: https://app.maze.co/report/DUA-Test/1fi4m37mmldarq1/intro
 
 #### HeatMaps
+
+En este apartado adjuntamos los heatmaps de las personas que realizaron el test con el website de DUA.
 
 ##### Participante 1 Hermano de Chris (509270528)
 
@@ -239,21 +243,13 @@ Link del Reporte de Resultados Maze: https://app.maze.co/report/DUA-Test/1fi4m37
 Aqui adjuntamos las evidencias de las personas a las que se le realizo el test.
 
 <p align="center">
-  <img src="Images/ScreenPapito.jpg" width="450"/>
-  <img src="Images/ScreenJoseph.jpg" width="450"/>
+  <img src="Images/ScreenPapito.png" width="450"/>
+  <img src="Images/ScreenJoseph.png" width="450"/>
 </p>
 <p align="center">
-  <img src="Images/ScreenArturo.jpg" width="450"/>
-  <img src="Images/ScreenJoche.jpg" width="450"/>
+  <img src="Images/ScreenArturo.jpeg" width="450"/>
+  <img src="Images/ScreenJoche.png" width="450"/>
 </p>
-
-
-- Escoger alguna app para ejecutar el UX test usando esos wireframes.
-- El test se lo van a aplicar en forma remota compartiendo un URL  a 3 estudiantes o amigos
-- Eso va a generar un reporte de resultados
-- Crear un markdown table con los resultados
-- Evidencias
-- Screenshots de cada persona que los testeo 
 
 ## 1.3 Component design strategy
 Define la técnica y los principios de diseño de componentes del frontend, cómo se logra la reutilización de componentes, cómo se logra centralizar los estilos, el branding, la internacionalización y la responsividad.
