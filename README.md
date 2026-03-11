@@ -236,6 +236,8 @@ Link del Reporte de Resultados Maze: https://app.maze.co/report/DUA-Test/1fi4m37
 
 #### Evidencias
 
+Aqui adjuntamos las evidencias de las personas a las que se le realizo el test.
+
 <p align="center">
   <img src="Images/ScreenPapito.jpg" width="450"/>
   <img src="Images/ScreenJoseph.jpg" width="450"/>
