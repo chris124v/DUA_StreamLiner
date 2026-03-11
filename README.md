@@ -174,18 +174,27 @@ Describir lo que sucede paso a paso en cada pantalla en terminos de acciones (no
 
 
 ### UX test results
+En este apartado encontraremos los resultados del test de UX sobre los wireframes usados anteriormente. Las tecnologias que se utilizaron para esto fueron Figma Make y Maze.
+
+| Pregunta | Tipo | Participante 1 (509270528) | Participante 2 (509834609) | Participante 3 (509831198) | Participante 4 |
+|----------|------|:-------------------------:|:-------------------------:|:-------------------------:|:--------------:|
+| ¿Hubo algún elemento que no entendió para qué servía? | Pregunta abierta | Nada, todo bien | Muy útil IA | No | |
+| ¿Los botones que tiene el sistema les pareció clara su función? | Selección múltiple | Bien clara | Bien clara | Bastante clara | |
+| ¿Qué tan intuitivo le pareció el sistema? (1-5) | Escala de opinión | 5 | 5 | 4 | |
+| ¿Del 1 al 10 qué tan fácil considera aprender a usar el sistema? | Escala de opinión | 8 | 8 | 9 | |
+| ¿Recomendaría este sistema para la automatización del DUA? | Sí/No | ✅ Sí | ✅ Sí | ✅ Sí | |
+
+#### HeatMaps
+
+#### Evidencias
+
+
 - Escoger alguna app para ejecutar el UX test usando esos wireframes.
 - El test se lo van a aplicar en forma remota compartiendo un URL  a 3 estudiantes o amigos
 - Eso va a generar un reporte de resultados
 - Crear un markdown table con los resultados
 - Evidencias
 - Screenshots de cada persona que los testeo 
-
-1. Decirle a alguna AI que nos genere wireframes de la o las pantallas principales
-- Seleccionar el folder
-- Seleccionar la plantilla del DUA
-- Como monitoreo el avance del proceso
-- Como se ve el avance final
 
 ## 1.3 Component design strategy
 Define la técnica y los principios de diseño de componentes del frontend, cómo se logra la reutilización de componentes, cómo se logra centralizar los estilos, el branding, la internacionalización y la responsividad.
