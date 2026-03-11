@@ -188,17 +188,14 @@ En este apartado encontraremos los resultados del test de UX sobre los wireframe
 
 ##### Participante 1 Hermano de Chris (509270528)
 
-```
 <p align="center">
-  <img src="img1.png" width="250"/>
-  <img src="img2.png" width="250"/>
+  <img src="JVheat.jpg" width="250"/>
+  <img src="JVheat2.jpg" width="250"/>
 </p>
 <p align="center">
-  <img src="img3.png" width="250"/>
-  <img src="img4.png" width="250"/>
+  <img src="JVheat3.jpg" width="250"/>
+  <img src="JVheat4.jpg" width="250"/>
 </p>
-
-```
 
 ##### Participante 2: Papa de Chris (509834609)
 
