@@ -225,7 +225,25 @@ Link del Reporte de Resultados Maze: https://app.maze.co/report/DUA-Test/1fi4m37
 
 ##### Participante 4: Jose Zumbado - Estudiante (509847370)
 
+<p align="center">
+  <img src="Images/JCheat.jpg" width="450"/>
+  <img src="Images/JCheat2.jpg" width="450"/>
+</p>
+<p align="center">
+  <img src="Images/JCheat3.jpg" width="450"/>
+  <img src="Images/JCheat4.jpg" width="450"/>
+</p>
+
 #### Evidencias
+
+<p align="center">
+  <img src="Images/ScreenPapito.jpg" width="450"/>
+  <img src="Images/ScreenJoseph.jpg" width="450"/>
+</p>
+<p align="center">
+  <img src="Images/ScreenArturo.jpg" width="450"/>
+  <img src="Images/ScreenJoche.jpg" width="450"/>
+</p>
 
 
 - Escoger alguna app para ejecutar el UX test usando esos wireframes.
