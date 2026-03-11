@@ -176,6 +176,8 @@ Describir lo que sucede paso a paso en cada pantalla en terminos de acciones (no
 ### UX test results
 En este apartado encontraremos los resultados del test de UX sobre los wireframes usados anteriormente. Las tecnologias que se utilizaron para esto fueron Figma Make y Maze.
 
+Link del Test Maze: https://t.maze.co/509306099
+
 | Pregunta | Tipo | Participante 1 Hermano de Chris (509270528) | Participante 2: Papa de Chris (509834609) | Participante 3: Arturo Carranza - Estudiante (509831198) | Participante 4: Jose Zumbado - Estudiante (509847370) |
 |----------|------|:-------------------------:|:-------------------------:|:-------------------------:|:--------------:|
 | ¿Hubo algún elemento que no entendió para qué servía? | Pregunta abierta | Nada, todo bien | Muy útil IA | No | Todo lo entendi |
@@ -183,6 +185,8 @@ En este apartado encontraremos los resultados del test de UX sobre los wireframe
 | ¿Qué tan intuitivo le pareció el sistema? (1-5) | Escala de opinión | 5 | 5 | 4 | 5 |
 | ¿Del 1 al 10 qué tan fácil considera aprender a usar el sistema? | Escala de opinión | 8 | 8 | 9 | 10 |
 | ¿Recomendaría este sistema para la automatización del DUA? | Sí/No | ✅ Sí | ✅ Sí | ✅ Sí | ✅ Sí |
+
+Link del Reporte de Resultados Maze: https://app.maze.co/report/DUA-Test/1fi4m37mmldarq1/intro
 
 #### HeatMaps
 
