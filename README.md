@@ -3,84 +3,105 @@ The preparation of the Single Administrative Document (DUA) required for import 
 
 To improve this process, we propose the development of DUA Streamliner, a system designed to automate much of the work involved in generating the DUA. The system will allow users to simply provide a folder containing all related documents, which will then be processed using tools capable of reading different file formats, extracting text from PDFs, and applying OCR to scanned images. Through AI-based semantic analysis specialized in customs terminology, the system will detect relevant data such as importer details, product information, values, and transport data, and automatically place it into the corresponding fields of the official DUA template defined by the Ministry of Finance. The system will generate a pre-filled Word document and highlight fields that may require verification, enabling experts to focus mainly on reviewing and confirming the information rather than completing the document from scratch.
 
-## Integrantes 
+## Authors
  * Isaac Villalobos Bonilla, 2024124285
  * Christopher Daniel Vargas Villalta, 2024108443
    
-Caso 1 de Diseño de Software. 
+Project 1 Software Design. 
 
 ---
-## Flujo de trabajo
-- Paso 0. El usuario elige si quiere hacer el trámite de exportación o importación (importante para saber cuál plantilla usar y qué campos serán obligatorios).
-- Paso 1. Se tiene un archivo "plantilla oficial vigente del DUA" definido por el Ministerio de Hacienda y otros "n" archivos (pueden ser excel, word, pdf, imágenes) en un folder path (variable de entorno).
-- Paso 2.Separar archivos en 4 categorías: Imagen, Excel, Word, PDF, Adicionalmente, antes de cualquier embedding, se realiza una clasificación temática del archivo completo, por ejemplo: Factura comercial, Documento de transporte, Certificado de origen, Packing list, Documento financiero, Otro. Esto permitirá restringir búsquedas posteriores por tipo de documento y evitar comparación exhaustiva innecesaria.
-- Paso 3. Revisar si la versión de la plantilla usada para el hash de comparación sigue siendo la más actualizada. Si no es así, hacer el paso 3.1.
-- Paso 3.1. Recorrer la plantilla usando división en bloques mediante embedding y guardar las secciones encontradas en un hash para comparación posterior. Cada bloque tendrá: hash del bloque, embedding, tipo de campo esperado, reglas de validación, tipo de renderizado (texto, tabla, código, condicional).
-- Paso 4. Se recorren los archivos Word mediante división por bloques y embedding. Antes de comparar contra toda la plantilla: Se indexan los bloques en una estructura tipo vector store por categoría documental. De esta manera funciona como un indice invertido, si ocupas - pais de origen sabes que debes buscar en certificado de origen.
-- Paso 5. Se realiza el mismo proceso para archivos Excel y PDF, considerando sus particularidades estructurales.
-- Paso 6. Se realiza el mismo proceso para imágenes mediante OCR avanzado.
-- Paso 7. Mediante modelos de IA entrenados para comprender terminología aduanera, el sistema identificará y clasificará automáticamente dentro de cada bloque los siguientes campos clave: Datos del importador/exportador, Información del proveedor, Descripción comercial y arancelaria de mercancías, Cantidades, pesos y valores FOB/CIF, Incoterms, Información de transporte, Número y fecha de factura, País de origen y procedencia, Régimen aduanero aplicable.  Una vez se extrae el campo se hace una validacion sintactica sabiendo que el pais sea valido, fecha valida, etc. 
+## Workflow
+* Step 0. The user chooses whether they want to perform an export or import procedure (this is important to determine which template should be used and which fields will be mandatory).
 
-- Paso 8. Se eligen los 2 textos con mayor porcentaje de similitud, tomando en cuenta la categoría documental mediante clasificación one-hot encoding. Estos serán enviados a una API de IA para determinar: Qué parte específica del DUA será llenada con ese bloque. Porcentaje de seguridad. 
+* Step 1. There is a file called "current official DUA template" defined by the Ministerio de Hacienda and other "n" files (these may be Excel, Word, PDF, or images) located in a folder path (environment variable).
 
-**Escala de advertencia**
-x ≤ 30% → Advertencia roja
-30% < x ≤ 70% → Advertencia amarilla
-x > 70% → Advertencia verde
+* Step 2. Separate the files into 4 categories: Image, Excel, Word, PDF. Additionally, before any embedding is performed, a thematic classification of the entire file is carried out, for example: Commercial invoice, Transport document, Certificate of origin, Packing list, Financial document, Other. This will allow restricting later searches by document type and avoid unnecessary exhaustive comparisons.
 
-- Paso 9. Se debe considerar que tipo de campo debe llenar (texto, si hay un codigo obligatorio, tabla dinamica), el formato (de las fechas, conversion de unidades), motor de reglas tomando en cuenta si tiene "x" ocupa seccion "y", despues hacer la generacion estructurada del documento respetando layout original (tendra un color dependiendo de la confianza)
-- Paso 10. Para el control de reprocesamiento y optimización de costos, Para evitar reprocesar todo cuando se agregan o corrigen archivos se tendra que cada bloque guarde hash del bloque y embedding, cuando se agrega un archivo se calcula el hash y compara con existentes, si ya existe se reusa el embedding.
+* Step 3. Check whether the version of the template used for the comparison hash is still the most updated one. If not, perform step 3.1.
+
+* Step 3.1. Traverse the template using block division through embeddings and store the detected sections in a hash for later comparison. Each block will contain: block hash, embedding, expected field type, validation rules, rendering type (text, table, code, conditional).
+
+* Step 4. Word files are traversed using block division and embeddings. Before comparing against the entire template: the blocks are indexed in a vector store–like structure by document category. In this way it works like an inverted index. For example, if you need country of origin, you know you must search in the certificate of origin.
+
+* Step 5. The same process is performed for Excel and PDF files, considering their structural particularities.
+
+* Step 6. The same process is performed for images using advanced OCR.
+
+* Step 7. Through AI models trained to understand customs terminology, the system will identify and automatically classify within each block the following key fields: Importer/exporter data, Supplier information, Commercial and tariff description of goods, Quantities, weights and FOB/CIF values, Incoterms, Transport information, Invoice number and date, Country of origin and provenance, Applicable customs regime. Once the field is extracted, a syntactic validation is performed ensuring the country is valid, the date is valid, etc.
+
+* Step 8. The 2 texts with the highest similarity percentage are selected, taking into account the document category through one-hot encoding classification. These will be sent to an AI API to determine: Which specific part of the DUA will be filled with that block. Confidence percentage.
+
+##### Warning scale
+
+- x ≤ 30% → Red warning
+- 30% < x ≤ 70% → Yellow warning
+- x > 70% → Green warning
+
+* Step 9. It must be considered what type of field needs to be filled (text, if there is a required code, dynamic table), the format (date formats, unit conversion), a rule engine considering that if it has "x" it requires section "y", then perform the structured generation of the document respecting the original layout (it will have a color depending on the confidence).
+
+* Step 10. For reprocessing control and cost optimization, to avoid reprocessing everything when files are added or corrected, each block will store the block hash and embedding. When a file is added, the hash is calculated and compared with existing ones; if it already exists, the embedding is reused.
+
 ---
 
 ### Links
 
-**Documentos del llenado del DUA**
-Aqui detalleremos algunos ejemplos de documentos necesarios para llenar el DUA.
+**Documents Required for Completing the DUA**
+Here we will detail some examples of documents required to complete the DUA.
 
-Documentos fundamentales para el DUA:
-* Factura Comercial: Detalla la transacción, partes implicadas, valor y moneda.
-* Documento de Transporte: Dependiendo del medio, puede ser Bill of Lading (marítimo), Air Waybill (aéreo) o CMR (terrestre).
-* Packing List (Lista de Contenido): Detalla el contenido, peso y bultos de la mercancía.
-* Certificado de Origen: Certifica dónde se fabricó la mercancía (ej. EUR.1).
-* Identificación (NIF/DNI/EORI): Del importador/exportador o su representante aduanero.
-* Valor en Aduana (DV-1): Requerido si el valor supera ciertos límites para determinar impuestos.
+Fundamental documents for the DUA:
+* Commercial Invoice: Details the transaction, involved parties, value, and currency.
+* Transport Document: Depending on the transport method, it may be a Bill of Lading (maritime), Air Waybill (air), or CMR (land).
+* Packing List: Details the contents, weight, and packages of the goods.
+* Certificate of Origin: Certifies where the goods were manufactured (e.g., EUR.1).
+* Identification (NIF/DNI/EORI): From the importer/exporter or their customs representative.
+* Customs Value (DV-1): Required if the value exceeds certain thresholds to determine taxes.
 
-En el caso de Costa Rica se especifica que a la agencia o agente de aduanas seleccionado  le debe llevar para el inicio de la importación los siguientes documentos: 
-- Factura comercial
-- B/L, Guía Aérea o carta de porte, dependiendo del medio de transporte por el cual se ha importado la mercancía
-- Fotocopia de la cédula de identidad, pasaporte o cédula jurídica; según sea el caso. (Cámara de Comercio de Costa Rica, 2016, p.3).
+In the case of Costa Rica, it is specified that the selected customs agency or customs broker must be provided with the following documents to initiate the import process:
+- Commercial invoice
+- B/L, Air Waybill, or waybill, depending on the transport method used to import the goods
+- Photocopy of the identity card, passport, or legal entity ID, depending on the case. (Cámara de Comercio de Costa Rica, 2016, p.3).
 
-Además de estos documentos, necesitará de la clasificación arancelaria de la mercancía, si cuenta con un agente aduanero él será el encargado de hacer la clasificación y verificar si requieren algún permiso para ser importados.  En caso de requerir algún permiso la agencia de aduanas puede solicitarlos a su nombre. Los permisos que se requieran dependerán del tipo de mercancía que desee importar. Los productos que necesitan de estos permisos según la Cámara de Comercio de Costa Rica (2016, p. 4) son:  
-* Productos Ionizantes 
-* Alimentos 
-* Cosméticos y Medicamentos 
-* Equipo e implementos Médicos Quirúrgicos 
-* Estupefacientes, Sustancias Psicotrópicas, entre otros autorizados por ley 
-* Plaguicidas de uso doméstico e industrial 
-* Productos Naturales y Tisanas 
-* Productos Químicos 
+In addition to these documents, the tariff classification of the goods will be required. If you have a customs broker, they will be responsible for performing the classification and verifying whether any permits are required for the goods to be imported. If any permit is required, the customs agency can request them on your behalf. The permits required will depend on the type of goods you wish to import. According to the Cámara de Comercio de Costa Rica (2016, p.4), the products that require such permits are:
 
-En general estos permisos se consiguen en su respectivo ministerio, por ejemplo, si se trata de cosméticos y medicamentos debe solicitar el permiso al Ministerio de Salud.  Según, la Cámara de Comercio de Costa Rica (2016, p. 3), una vez que se cuenten con los permisos (si se requieren) la Agencia o Agente de aduanas confeccionarán la Declaración Aduanera de Importación y la deberán presentar ante la Aduana por la cual ingresarán los productos.  
+* Ionizing products
+* Food products
+* Cosmetics and medicines
+* Medical surgical equipment and instruments
+* Narcotics, psychotropic substances, among others authorized by law
+* Domestic and industrial pesticides
+* Natural products and herbal infusions
+* Chemical products
 
-1. Instructivo: https://procomer.com/wp-content/uploads/2025/04/INSTRUCTIVO-DUAS-EXPORTACIONES-3.0.pdf
-2. Casos de Uso en CR: https://piea.campus.co.cr/wp-content/uploads/2021/09/Gu%C3%ADa-Requisitos-b%C3%A1sicos-para-realizar-importaciones-y-exportaciones-en-Costa-Rica..pdf
-3. Formato de Factura Comercial: https://www.scribd.com/document/458411170/factura-comercial
-4. Modelo de Factura Comercial Llenada: https://www.slideshare.net/slideshow/modelo-de-factura-comercial-commercial-invoice-llenada/81392481
-5. Documentos de Transporte Internacional: https://globalnegotiator.com/blog/documentos-de-transporte-internacional/
-6. Bill of Landing: https://www.scribd.com/document/484317652/l-Documento-de-Transporte-Maritimo
+In general, these permits are obtained from the corresponding ministry. For example, if the goods are cosmetics or medicines, the permit must be requested from the Ministry of Health. According to the Cámara de Comercio de Costa Rica (2016, p.3), once the permits are obtained (if required), the customs agency or broker will prepare the Import Customs Declaration and submit it to the Customs office through which the goods will enter.
+
+1. Instructions: https://procomer.com/wp-content/uploads/2025/04/INSTRUCTIVO-DUAS-EXPORTACIONES-3.0.pdf
+2. Use Cases in Costa Rica: https://piea.campus.co.cr/wp-content/uploads/2021/09/Gu%C3%ADa-Requisitos-b%C3%A1sicos-para-realizar-importaciones-y-exportaciones-en-Costa-Rica..pdf
+3. Commercial Invoice Format: https://www.scribd.com/document/458411170/factura-comercial
+4. Completed Commercial Invoice Example: https://www.slideshare.net/slideshow/modelo-de-factura-comercial-commercial-invoice-llenada/81392481
+5. International Transport Documents: https://globalnegotiator.com/blog/documentos-de-transporte-internacional/
+6. Bill of Lading: https://www.scribd.com/document/484317652/l-Documento-de-Transporte-Maritimo
 7. Airway Bill: https://www.dripcapital.com/es-mx/recursos/blog/air-waybill-que-es
 8. CMR: https://www.globalnegotiator.com/files/CMR-carta-de-porte-modelo-ejemplo.pdf
 9. Packing List: https://www.scribd.com/document/649777725/FORMATO-PACKING-LIST-2022
-10. Certificado de Origen: https://www.comex.go.cr/media/2481/01_anexo-316-certificado-de-origen.pdf
-11. Certificado de Origen: https://www.docsity.com/es/docs/certificado-de-origen-1/5523092/
-12. Valor en Aduana Ejemplo: https://www.scribd.com/doc/273864348/Hoja-de-Calculo-Para-Valor-en-Aduana
+10. Certificate of Origin: https://www.comex.go.cr/media/2481/01_anexo-316-certificado-de-origen.pdf
+11. Certificate of Origin: https://www.docsity.com/es/docs/certificado-de-origen-1/5523092/
+12. Customs Value Example: https://www.scribd.com/doc/273864348/Hoja-de-Calculo-Para-Valor-en-Aduana
 
 ---
 
-**Documentos DUA Llenados**
-En este apartado incluimos links de documentos DUA llenos.
+**Completed DUA Documents**
+In this section we include links to completed DUA documents.
 
-1. Instructivo Costa Rica - Ecuador: https://www.vuce.cr/wp-content/uploads/2024/04/Guia-de-llenado-CO-Ecuador.pdf
+1. Costa Rica - Ecuador Guide: https://www.vuce.cr/wp-content/uploads/2024/04/Guia-de-llenado-CO-Ecuador.pdf
+
+---
+
+**Existing solutions that perform similar tasks**
+In Costa Rica there are currently no solutions of this type, but in different countries there are similar systems for the automatic completion of customs documents.
+
+1. ACE Secure Data Portal: https://ace.cbp.gov/s/login/?ec=302&startURL=%2Fs%2F
+
+The official U.S. platform for electronic submission of customs data. All commercial data (including import declarations) is submitted through this system.It allows uploading structured data for goods entry, ISF 10+2, among others.
 
 ---
 
@@ -115,12 +136,15 @@ Tecnología de frontend, de seguridad, librerías de terceros, frameworks, hosti
 - Environments: Development, Stage, Production
 - Environment deployments tools: GitHub Environments
 - Observability framework: Google Cloud Operations Suite (Cloud Logging + Cloud Monitoring)
+- Authentication Server: Auth0
+- Credential Verification Server: NodeJS Backend
+- Cloud Secret Storage: Google Cloud
   
 ## 1.2 UX UI analysis
-Incluye los atributos de usabilidad deseables del aplicativo, un diseño preliminar del UX a modo wireframes, y las evidencias de las pruebas de UX con usuarios reales que validan diseño diseño preliminar
+Here we define the desired usability attributes of the application, a preliminary UX design in the form of wireframes, and evidence of UX testing with real users that validates the preliminary design.
 
 ### Core Bussines Proccesses 
-Describir lo que sucede paso a paso en cada pantalla en terminos de acciones (no hablen de botones, ni listas ni de ningun componente visua, solo acciones de usuario y el resultado de cada accion)
+In this section we describe via wireframes what the user will interact with, we include images of each wireframe and a step by step on how to do it.
 
 #### Login
 1. The user enters their login identifier, password, and one-time authentication token.
@@ -129,30 +153,30 @@ Describir lo que sucede paso a paso en cada pantalla en terminos de acciones (no
 4. If the credentials are valid, the system authenticates the user and grants access to the system.
 5. After successful authentication, the user proceeds to the generator configuration stage.
 
-**Imagen de Login**
+**Login Image**
 
-![Imagen del Login](Images/LoginScreen.png)
+![Login](Images/LoginScreen.png)
 
 
-#### Configurar el generador
+#### Set up the generator
 1. The user specifies whether the declaration corresponds to an import or export process.
 2. The user provides the folder path that contains the documents required for the process.
 3. The user starts the automated generation process.
 
-**Imagen del Generator**
+**Generator Image**
 
-![Imagen del Generator](Images/GeneratorConfiguration.png)
+![Generator](Images/GeneratorConfiguration.png)
 
-#### Monitoreo del avance
+#### Progress monitoring
 1. The user checks the status of the generation process.
 2. The user can repeatedly check the process status until the generation is completed.
 3. Once the process finishes, the system informs the user that the result is available.
 
-**Imagen del Monitoreo**
+**Progress Monitoring Image**
 
-![Imagen del Monitoreo](Images/ProgressMonitoring.png)
+![Progress monitoring](Images/ProgressMonitoring.png)
 
-#### Obtencion del resultado
+#### Results Obtained
 1. The user requests the generated DUA document.
 2. The system provides the completed DUA document generated from the processed information and informs the user.
 3. The user reviews the generated document and verifies the extracted information and confidence levels.
@@ -160,41 +184,41 @@ Describir lo que sucede paso a paso en cada pantalla en terminos de acciones (no
 5. The user confirms the final version of the generated DUA document for further use.
 6. The user downloads the final version of the DUA document.
 
-**Imagen del Resultado**
+**Results Wireframe**
 
-![Imagen del Resultado](Images/ResultRetrieval.png)
+![Results](Images/ResultRetrieval.png)
 
 #### Logout
 1. The user decides to end the session.
 2. The user is returned to the authentication stage and no longer has access to the system.
 
-**Imagen del Logout**
+**LogOut Wireframe**
 
-![Imagen del Logout](Images/LogoutConfirmation.png)
+![LogOut Wireframe](Images/LogoutConfirmation.png)
 
 
-### UX test results
-En este apartado encontraremos los resultados del test de UX sobre los wireframes usados anteriormente. Las tecnologias que se utilizaron para esto fueron Figma Make y Maze.
+### UX Test Tesults
+In this section, you will find the results of the UX test on the wireframes used previously. The technologies used for this were Figma Make and Maze.
 
-Link del website de Figma: https://smoke-chill-65130003.figma.site
+Figma Website: https://smoke-chill-65130003.figma.site
 
-Link del Test Maze: https://t.maze.co/509306099
+Maze UX Text: https://t.maze.co/509306099
 
-| Pregunta | Tipo | Participante 1 Hermano de Chris (509270528) | Participante 2: Papa de Chris (509834609) | Participante 3: Arturo Carranza - Estudiante (509831198) | Participante 4: Jose Zumbado - Estudiante (509847370) |
+| Question | Type | Tester 1: Chris's Brother (509270528) | Tester 2: Chris's Father (509834609) | Tester 3: Arturo Carranza - Student (509831198) | Tester 4: Jose Zumbado - Student (509847370) |
 |----------|------|:-------------------------:|:-------------------------:|:-------------------------:|:--------------:|
-| ¿Hubo algún elemento que no entendió para qué servía? | Pregunta abierta | Nada, todo bien | Muy útil IA | No | Todo lo entendi |
-| ¿Los botones que tiene el sistema les pareció clara su función? | Selección múltiple | Bien clara | Bien clara | Bastante clara | Bien clara |
-| ¿Qué tan intuitivo le pareció el sistema? (1-5) | Escala de opinión | 5 | 5 | 4 | 5 |
-| ¿Del 1 al 10 qué tan fácil considera aprender a usar el sistema? | Escala de opinión | 8 | 8 | 9 | 10 |
-| ¿Recomendaría este sistema para la automatización del DUA? | Sí/No | ✅ Sí | ✅ Sí | ✅ Sí | ✅ Sí |
+| Was there any element whose purpose you did not understand? | Open question | Nothing, everything was clear | Very useful AI | No | I understood everything |
+| Did the system buttons have a clear function? | Multiple choice | Very clear | Very clear | Quite clear | Very clear |
+| How intuitive did you find the system? (1-5) | Opinion scale | 5 | 5 | 4 | 5 |
+| From 1 to 10, how easy do you think it is to learn how to use the system? | Opinion scale | 8 | 8 | 9 | 10 |
+| Would you recommend this system for DUA automation? | Yes/No | ✅ Yes | ✅ Yes | ✅ Yes | ✅ Yes |
 
-Link del Reporte de Resultados Maze: https://app.maze.co/report/DUA-Test/1fi4m37mmldarq1/intro
+Results Report From Maze: https://app.maze.co/report/DUA-Test/1fi4m37mmldarq1/intro
 
 #### HeatMaps
 
-En este apartado adjuntamos los heatmaps de las personas que realizaron el test con el website de DUA.
+In this section we include the respective heatmaps for each of the testers and how they interacted with the prototype of the system.
 
-##### Participante 1 Hermano de Chris (509270528)
+##### Tester 1: Chris's Brother (509270528)
 
 <p align="center">
   <img src="Images/JVheat.jpg" width="450"/>
@@ -205,7 +229,7 @@ En este apartado adjuntamos los heatmaps de las personas que realizaron el test 
   <img src="Images/JVheat4.jpg" width="450"/>
 </p>
 
-##### Participante 2: Papa de Chris (509834609)
+##### Tester 2: Chris's Father (509834609)
 
 <p align="center">
   <img src="Images/JHheat.jpg" width="450"/>
@@ -216,7 +240,7 @@ En este apartado adjuntamos los heatmaps de las personas que realizaron el test 
   <img src="Images/JHheat4.jpg" width="450"/>
 </p>
 
-##### Participante 3: Arturo Carranza - Estudiante (509831198)
+##### Tester 3: Arturo Carranza - Student (509831198)
 
 <p align="center">
   <img src="Images/ACheat.jpg" width="450"/>
@@ -227,7 +251,7 @@ En este apartado adjuntamos los heatmaps de las personas que realizaron el test 
   <img src="Images/ACheat4.jpg" width="450"/>
 </p>
 
-##### Participante 4: Jose Zumbado - Estudiante (509847370)
+##### Tester 4: Jose Zumbado - Student (509847370)
 
 <p align="center">
   <img src="Images/JCheat.jpg" width="450"/>
@@ -238,9 +262,9 @@ En este apartado adjuntamos los heatmaps de las personas que realizaron el test 
   <img src="Images/JCheat4.jpg" width="450"/>
 </p>
 
-#### Evidencias
+#### Proofs
 
-Aqui adjuntamos las evidencias de las personas a las que se le realizo el test.
+In this section we include proofs on how we contacted the participants or tester for the wireframes we created in the previous sections.
 
 <p align="center">
   <img src="Images/ScreenPapito.png" width="450"/>
@@ -255,7 +279,49 @@ Aqui adjuntamos las evidencias de las personas a las que se le realizo el test.
 Define la técnica y los principios de diseño de componentes del frontend, cómo se logra la reutilización de componentes, cómo se logra centralizar los estilos, el branding, la internacionalización y la responsividad.
 
 ## 1.4 Security
-Tecnologías, técnicas y classes con su respectiva ubicación en la estructura del proyecto responsables de la autenticación y la autorización de permisos y sesiones. 
+
+Authentication is handled through Google OAuth using Auth0 as the authentication provider.
+
+The application does not use Multi-Factor Authentication (MFA).
+Authentication is performed through a Google account login only.
+
+The system is designed as a single application, therefore Single Sign-On (SSO) is not required.
+
+When a user authenticates with Google, the frontend obtains a Google OAuth ID Token.
+This token is sent to the backend where it is verified.
+
+The NodeJS backend server acts as the credential verification server.
+It validates the Google ID Token to confirm the user's identity and then creates a secure application session for subsequent requests.
+
+The authentication flow is therefore:
+
+* User clicks login with Google.
+
+* Auth0 handles the Google OAuth authentication process.
+
+* Google returns an ID Token.
+
+* The frontend sends the ID Token to the backend.
+
+* The NodeJS server verifies the token.
+
+* If the token is valid, a secure session is created.
+
+Sensitive configuration data and secrets are stored in Google Cloud secure storage services.
+
+**Google Cloud is responsible for storing:**
+
+- API keys
+
+- Database credentials
+
+- Encryption keys
+
+- Environment variables
+
+- Other sensitive configuration data
+
+These secrets are never stored directly in the source code and are accessed securely by the backend during runtime.
 
 ## 1.5 Layered design
 diseño y explicación de las diversas capas de la aplicación en el frontend. 
