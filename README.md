@@ -404,30 +404,32 @@ These secrets are never stored directly in the source code and are accessed secu
 
 **Mermaid Diagram Architecture Workflow**
 
-```
+```mermaid
 flowchart TD
 
 User --> Router
-Router --> AuthLayer
-AuthLayer --> Components
+Router --> AuthenticationLayer
+AuthenticationLayer --> ComponentsLayer
 
-Components --> Hooks
-Hooks --> Services
+ComponentsLayer --> HooksLayer
+HooksLayer --> ServicesLayer
 
-Services --> ApiClients
-ApiClients --> Backend
+ServicesLayer --> ApiClientsLayer
+ApiClientsLayer --> BackendNode
 
-Backend --> ProcessingPipeline
-ProcessingPipeline --> AIExtraction
-AIExtraction --> DUAProcessing
+BackendNode --> DocumentProcessing
+DocumentProcessing --> AIExtraction
+AIExtraction --> DUAGeneration
 
-DUAProcessing --> BackendResponse
+DUAGeneration --> BackendResponse
 
-BackendResponse --> Services
-Services --> StateManagement
-StateManagement --> Components
-Components --> User
+BackendResponse --> ServicesLayer
+ServicesLayer --> StateManagementLayer
+StateManagementLayer --> ComponentsLayer
+ComponentsLayer --> User
 ```
+
+
 
 User
  ↓
