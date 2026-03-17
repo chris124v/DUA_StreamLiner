@@ -404,6 +404,7 @@ These secrets are never stored directly in the source code and are accessed secu
 
 **Mermaid Diagram Architecture Workflow**
 
+```
 flowchart TD
 
 User --> Router
@@ -426,6 +427,7 @@ BackendResponse --> Services
 Services --> StateManagement
 StateManagement --> Components
 Components --> User
+```
 
 User
  ↓
