@@ -276,7 +276,36 @@ In this section we include proofs on how we contacted the participants or tester
 </p>
 
 ## 1.3 Component design strategy
-Define la técnica y los principios de diseño de componentes del frontend, cómo se logra la reutilización de componentes, cómo se logra centralizar los estilos, el branding, la internacionalización y la responsividad.
+
+The frontend interface will follow a modular component-based architecture using React as stated in the technolgy stack.
+
+Component development will follow the Atomic Design methodology in order to maintain a scalable and reusable UI structure. 
+
+The components will be organized into the following levels:
+
+- Atoms: basic UI elements such as buttons, inputs, labels, and icons.
+- Molecules: small combinations of atoms such as form fields or input groups.
+- Organisms: larger UI sections composed of molecules and atoms such as document upload panels, result viewers, or navigation bars.
+- Templates: layout structures that define how organisms are arranged within a page.
+- Pages: full application screens such as the document upload page or the generated DUA review page.
+
+CSS styles will be scoped per component in order to avoid conflicts and ensure maintainability. Each component will contain its own style file when necessary.
+
+A consistent naming convention will be used for CSS classes following the pattern:
+
+- ComponentName-ElementName
+
+Example:
+- UploadPanel-Container  
+- UploadPanel-Button
+
+Responsive design will be supported using relative units such as `em` and `rem` to ensure proper scaling across different screen sizes.
+
+Also the design will prioritize clarity and simplicity since the primary users are customs specialists who need to process documents efficiently.
+
+The interface components will also support future internationalization (i18n) if the system needs to be adapted to other countries or languages.
+
+In this case, we do not include accessible requirements. 
 
 ## 1.4 Security
 
@@ -324,7 +353,105 @@ Sensitive configuration data and secrets are stored in Google Cloud secure stora
 These secrets are never stored directly in the source code and are accessed securely by the backend during runtime.
 
 ## 1.5 Layered design
-diseño y explicación de las diversas capas de la aplicación en el frontend. 
+
+* The frontend application is built using React and follows a layered architecture with component-based rendering.
+
+* When the user accesses the application, the Routing Layer determines the requested page.
+
+* If there is no authenticated session, the Authentication Layer is invoked using Auth0 with Google OAuth.
+
+* If authentication is successful, the visual interface is rendered within the Components Layer.
+
+* Components follow the Atomic Design methodology (atoms, molecules, organisms, templates, and pages).
+
+* Within components, the Hooks Layer connects user actions with the Services Layer.
+
+* The user selects whether the operation corresponds to an import or export procedure, which determines the template and required fields.
+
+* The user uploads documents that may include Word, Excel, PDF, or image files.
+
+* The Services Layer manages document submission and coordinates communication with backend services.
+
+* To perform these operations, Services interact with the ApiClients Layer.
+
+* The ApiClients Layer handles communication with backend endpoints implemented in Node.js.
+
+* ApiClients read API endpoints and configuration parameters from the Settings Layer.
+
+* The Settings Layer accesses secure environment variables stored in Google Cloud secret management services.
+
+* All requests and responses exchanged through ApiClients are mapped to domain classes defined in the Models Layer.
+
+* The DataValidation Layer validates incoming and outgoing data structures to ensure format and integrity.
+
+* All layers can access shared resources such as Models, Utils, and the State Management Layer.
+
+* The State Management Layer maintains application state including user session, uploaded files, and document processing status.
+
+* The backend initiates the document processing pipeline, including document classification, content extraction, and DUA field identification.
+
+* Long-running processes such as OCR analysis and AI-based extraction are handled asynchronously.
+
+* The Notification Service Layer allows the frontend to receive processing updates through event notifications.
+
+* Once processing is completed, the backend returns the structured data required to generate the DUA document.
+
+* The frontend updates the user interface and displays the generated document along with confidence indicators.
+
+* The Logs Layer records system events and interactions for monitoring and debugging purposes.
+
+* The Exception Handling Layer provides centralized error management across all layers.
+
+**Mermaid Diagram Architecture Workflow**
+
+flowchart TD
+
+User --> Router
+Router --> AuthLayer
+AuthLayer --> Components
+
+Components --> Hooks
+Hooks --> Services
+
+Services --> ApiClients
+ApiClients --> Backend
+
+Backend --> ProcessingPipeline
+ProcessingPipeline --> AIExtraction
+AIExtraction --> DUAProcessing
+
+DUAProcessing --> BackendResponse
+
+BackendResponse --> Services
+Services --> StateManagement
+StateManagement --> Components
+Components --> User
+
+User
+ ↓
+Routing
+ ↓
+Authentication
+ ↓
+React Components
+ ↓
+Hooks
+ ↓
+Services
+ ↓
+API Clients
+ ↓
+NodeJS Backend
+ ↓
+AI Document Processing
+ ↓
+DUA Generation
+ ↓
+Response
+ ↓
+State Management
+ ↓
+UI Update
 
 ## 1.6  Design patterns
 Diseño de classes con su respectiva ubicación en la estructura del proyecto, donde sea necesario aplicar patrones de diseño orientado a objetos, como por ejemplo: seguridad, refrescado de UI, recepción de notificaciones, almacenamiento de estados, llamadas a api, operaciones asíncronas, invalidación de sesiones, programación por eventos, creación de objetos. 
