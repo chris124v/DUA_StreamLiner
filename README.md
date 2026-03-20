@@ -490,7 +490,6 @@ The following classes are proposed to keep the frontend architecture modular, te
 | `ApiClient` | `src/api/ApiClient.ts` | Base HTTP client with headers, retries, timeout, and error mapping. | Template Method | Defines a fixed processing skeleton and lets subclasses customize steps. |
 | `AuthApiClient` | `src/api/AuthApiClient.ts` | Handles authentication-related calls and token exchange. | Adapter | Converts one interface/protocol into another expected by the app. |
 | `DocumentApiClient` | `src/api/DocumentApiClient.ts` | Sends folder/file metadata and starts DUA generation jobs. | Repository | Encapsulates data access and hides transport/storage details. |
-| `PollingJobService` | `src/services/PollingJobService.ts` | Polls long-running backend operations (OCR, extraction, generation). | State | Changes object behavior according to its current state lifecycle. |
 | `NotificationHub` | `src/notifications/NotificationHub.ts` | Publishes process status updates across the app. | Publisher-Subscriber | Broadcasts messages to multiple listeners without tight coupling. |
 | `ProgressEventBus` | `src/events/ProgressEventBus.ts` | Event bus for generation progress, completion, and failure events. | Event Bus | Routes events through a central channel for decoupled communication. |
 | `GenerationStore` | `src/state/GenerationStore.ts` | Stores processing state, confidence map, and active document context. | Singleton Store | Maintains a single shared instance and global access point. |
