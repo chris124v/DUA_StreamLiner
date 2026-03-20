@@ -491,13 +491,69 @@ The following classes are proposed to keep the frontend architecture modular, te
 | `DUADocumentFactory` | `src/domain/DUADocumentFactory.ts` | Creates the final domain object for generated DUA output. | Factory Method | Delegates object creation to specialized creators instead of direct `new`. |
 | `ValidationRuleEngine` | `src/validation/ValidationRuleEngine.ts` | Executes syntax and business validation rules before document output. | Chain of Responsibility | Passes a request through multiple handlers until one handles or rejects it. |
 
-## 1.7 un folder en /src que contiene el scaffold del proyecto, el cual se genera a partir de toda la especificación de los puntos del 1.1 al 1.6. 
+## 1.7 Scaffold SRC
 
-Otros aspectos
-- Todo debe hacerse en inglés
-- Respete la nomenclatura de Markdown, sus niveles y formatos
-- Evite ser verboso o llenar esta documentación de diseño técnico, con narrativas que no aportan valor al diseño
-- Recuerde que el lector final de un diseño es el equipo de desarrollo del sistema y bien agentes de AI que van a crear el proyecto base, por ende evite explicaciones innecesarias
+The following structure represents the frontend project scaffold.  
+It reflects the layered architecture, atomic design principles, and design patterns defined in previous sections.
+
+```plaintext
+src
+├── index.ts
+├── apiClients
+│   ├── ApiClient.ts
+│   ├── DocumentApiClient.ts
+│   └── adapters
+│       └── Auth0TokenAdapter.ts
+├── components
+│   ├── atoms
+│   │   └── StatusBadge.tsx
+│   ├── molecules
+│   │   └── LoginForm.tsx
+│   ├── organisms
+│   │   └── GeneratorPanel.tsx
+│   ├── templates
+│   │   └── MainLayoutTemplate.tsx
+│   └── pages
+│       └── DUAStreamlinerPage.tsx
+├── hooks
+│   └── useGenerationStatus.ts
+├── services
+│   └── documentProcessing
+│       ├── strategies
+│       │   ├── DocumentProcessingStrategy.ts
+│       │   └── PdfProcessingStrategy.ts
+│       └── builders
+│           ├── DUADocumentBuilder.ts
+│           └── DUADirector.ts
+├── models
+│   └── DUAField.ts
+├── utils
+│   └── DUAFieldMapper.ts
+├── settings
+│   └── AppConfig.ts
+├── state
+│   └── store
+│       ├── GenerationStore.ts
+│       └── index.ts
+├── notifications
+│   └── NotificationHub.ts
+├── logs
+│   └── AppLogger.ts
+├── exceptions
+│   └── AppException.ts
+├── security
+│   ├── AuthSessionGuard.ts
+│   ├── PermissionPolicy.ts
+│   └── SessionManager.ts
+├── validation
+│   ├── BaseValidationHandler.ts
+│   └── ValidationRuleEngine.ts
+├── domain
+│   └── DUADocumentFactory.ts
+├── events
+│   └── ProgressEventBus.ts
+└── ui
+    └── UIRefreshCoordinator.ts
 
 --- 
 
