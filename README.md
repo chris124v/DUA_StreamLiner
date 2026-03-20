@@ -479,6 +479,26 @@ UI Update
 ## 1.6  Design patterns
 Diseño de classes con su respectiva ubicación en la estructura del proyecto, donde sea necesario aplicar patrones de diseño orientado a objetos, como por ejemplo: seguridad, refrescado de UI, recepción de notificaciones, almacenamiento de estados, llamadas a api, operaciones asíncronas, invalidación de sesiones, programación por eventos, creación de objetos. 
 
+The following classes are proposed to keep the frontend architecture modular, testable, and aligned with the workflow defined in this document.
+
+| Class / Interface | Suggested Location | Responsibility | Pattern | What the Pattern Usually Does |
+|----------|----------|----------|----------|----------|
+| `AuthSessionGuard` | `src/security/AuthSessionGuard.ts` | Protects private routes and validates active session before page rendering. | Guard | Stops unauthorized access before executing protected logic. |
+| `PermissionPolicy` | `src/security/PermissionPolicy.ts` | Centralizes role and permission checks (`MANAGE_USERS`, `GENERATE_DUA`, etc.). | Strategy | Switches behavior at runtime based on interchangeable rules. |
+| `SessionManager` | `src/security/SessionManager.ts` | Stores session metadata, refresh windows, and logout triggers. | Facade | Exposes one simplified API over several internal operations. |
+| `SessionInvalidationService` | `src/security/SessionInvalidationService.ts` | Invalidates session on token expiration, revocation, or backend rejection. | Observer | Reacts to state changes by notifying subscribed components/services. |
+| `ApiClient` | `src/api/ApiClient.ts` | Base HTTP client with headers, retries, timeout, and error mapping. | Template Method | Defines a fixed processing skeleton and lets subclasses customize steps. |
+| `AuthApiClient` | `src/api/AuthApiClient.ts` | Handles authentication-related calls and token exchange. | Adapter | Converts one interface/protocol into another expected by the app. |
+| `DocumentApiClient` | `src/api/DocumentApiClient.ts` | Sends folder/file metadata and starts DUA generation jobs. | Repository | Encapsulates data access and hides transport/storage details. |
+| `PollingJobService` | `src/services/PollingJobService.ts` | Polls long-running backend operations (OCR, extraction, generation). | State | Changes object behavior according to its current state lifecycle. |
+| `NotificationHub` | `src/notifications/NotificationHub.ts` | Publishes process status updates across the app. | Publisher-Subscriber | Broadcasts messages to multiple listeners without tight coupling. |
+| `ProgressEventBus` | `src/events/ProgressEventBus.ts` | Event bus for generation progress, completion, and failure events. | Event Bus | Routes events through a central channel for decoupled communication. |
+| `GenerationStore` | `src/state/GenerationStore.ts` | Stores processing state, confidence map, and active document context. | Singleton Store | Maintains a single shared instance and global access point. |
+| `UIRefreshCoordinator` | `src/ui/UIRefreshCoordinator.ts` | Coordinates selective UI refresh after state changes. | Mediator | Centralizes collaboration rules between components to reduce direct dependencies. |
+| `DUAFieldMapper` | `src/domain/DUAFieldMapper.ts` | Maps extracted values to official DUA fields and format rules. | Adapter | Converts extracted source structures into the DUA target field contract expected by the system. |
+| `DUADocumentFactory` | `src/domain/DUADocumentFactory.ts` | Creates the final domain object for generated DUA output. | Factory Method | Delegates object creation to specialized creators instead of direct `new`. |
+| `ValidationRuleEngine` | `src/validation/ValidationRuleEngine.ts` | Executes syntax and business validation rules before document output. | Chain of Responsibility | Passes a request through multiple handlers until one handles or rejects it. |
+
 ## 1.7 un folder en /src que contiene el scaffold del proyecto, el cual se genera a partir de toda la especificación de los puntos del 1.1 al 1.6. 
 
 Otros aspectos
