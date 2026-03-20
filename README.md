@@ -352,7 +352,7 @@ Sensitive configuration data and secrets are stored in Google Cloud secure stora
 
 These secrets are never stored directly in the source code and are accessed securely by the backend during runtime.
 
-Roles: Manager, Customs Agent
+* Roles: Manager, Customs Agent
 Permissions by Role:
 
 Manager
@@ -362,6 +362,7 @@ Manager
 -- Description: Access operational and performance reports.
 - Permission Code: EDIT_TEMPLATES
 -- Description: Change or update DUA templates available
+
 Customs Agent
 - Permission Code: LOAD_FILES
 -- Description: Set and upload a folder with data files.
