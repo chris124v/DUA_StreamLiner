@@ -389,15 +389,15 @@ Customs Agent
 
 * The user uploads documents that may include Word, Excel, PDF, or image files.
 
-* The Services Layer manages document submission and coordinates communication with backend services.
+* The Services Layer manages application logic such as document handling, workflow orchestration, and data preparation.
 
 * To perform these operations, Services interact with the ApiClients Layer.
 
-* The ApiClients Layer handles communication with backend endpoints implemented in Node.js.
+* The ApiClients Layer handles communication with external services and APIs.
 
 * ApiClients read API endpoints and configuration parameters from the Settings Layer.
 
-* The Settings Layer accesses secure environment variables stored in Google Cloud secret management services.
+* The Settings Layer accesses environment variables and configuration data required during runtime.
 
 * All requests and responses exchanged through ApiClients are mapped to domain classes defined in the Models Layer.
 
@@ -407,13 +407,11 @@ Customs Agent
 
 * The State Management Layer maintains application state including user session, uploaded files, and document processing status.
 
-* The backend initiates the document processing pipeline, including document classification, content extraction, and DUA field identification.
+* Long-running operations such as document processing or AI-based extraction are handled asynchronously.
 
-* Long-running processes such as OCR analysis and AI-based extraction are handled asynchronously.
+* The Notification Service Layer allows the application to react to asynchronous events and update the UI accordingly.
 
-* The Notification Service Layer allows the frontend to receive processing updates through event notifications.
-
-* Once processing is completed, the backend returns the structured data required to generate the DUA document.
+* Once processing is completed, the resulting structured data is used to generate the final DUA document representation.
 
 * The frontend updates the user interface and displays the generated document along with confidence indicators.
 
@@ -426,29 +424,24 @@ Customs Agent
 ```mermaid
 flowchart TD
 
-User --> Router
-Router --> AuthenticationLayer
+User --> RoutingLayer
+RoutingLayer --> AuthenticationLayer
 AuthenticationLayer --> ComponentsLayer
 
 ComponentsLayer --> HooksLayer
 HooksLayer --> ServicesLayer
 
 ServicesLayer --> ApiClientsLayer
-ApiClientsLayer --> BackendNode
+ApiClientsLayer --> ExternalServices
 
-BackendNode --> DocumentProcessing
-DocumentProcessing --> AIExtraction
-AIExtraction --> DUAGeneration
+ExternalServices --> NotificationServiceLayer
 
-DUAGeneration --> BackendResponse
-
-BackendResponse --> ServicesLayer
+NotificationServiceLayer --> ServicesLayer
 ServicesLayer --> StateManagementLayer
 StateManagementLayer --> ComponentsLayer
+
 ComponentsLayer --> User
 ```
-
-
 
 User
  ↓
@@ -477,7 +470,7 @@ State Management
 UI Update
 
 ## 1.6  Design patterns
-Diseño de classes con su respectiva ubicación en la estructura del proyecto, donde sea necesario aplicar patrones de diseño orientado a objetos, como por ejemplo: seguridad, refrescado de UI, recepción de notificaciones, almacenamiento de estados, llamadas a api, operaciones asíncronas, invalidación de sesiones, programación por eventos, creación de objetos. 
+Design of classes with their corresponding placement within the project structure, where necessary applying object-oriented design patterns, such as: security, UI refresh, notification handling, state management, API calls, asynchronous operations, session invalidation, event-driven programming, and object creation.
 
 The following classes are proposed to keep the frontend architecture modular, testable, and aligned with the workflow defined in this document.
 
