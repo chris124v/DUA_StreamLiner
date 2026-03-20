@@ -352,6 +352,24 @@ Sensitive configuration data and secrets are stored in Google Cloud secure stora
 
 These secrets are never stored directly in the source code and are accessed securely by the backend during runtime.
 
+Roles: Manager, Customs Agent
+Permissions by Role:
+
+Manager
+- Permission Code: MANAGE_USERS
+-- Description: Manage user crud
+- Permission Code: VIEW_REPORTS
+-- Description: Access operational and performance reports.
+- Permission Code: EDIT_TEMPLATES
+-- Description: Change or update DUA templates available
+Customs Agent
+- Permission Code: LOAD_FILES
+-- Description: Set and upload a folder with data files.
+- Permission Code: GENERATE_DUA
+-- Description: Starts the AI process of generating a DUA
+- Permission Code: DOWNLOAD_DUA
+-- Description: Downloads the DUA generated
+
 ## 1.5 Layered design
 
 * The frontend application is built using React and follows a layered architecture with component-based rendering.
