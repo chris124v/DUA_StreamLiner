@@ -476,7 +476,7 @@ The following classes are proposed to keep the frontend architecture modular, te
 
 | Class / Interface | Location | Responsibility | Pattern | Justification |
 |------------------|----------|----------------|---------|--------------|
-| AuthSessionGuard | src/security/AuthSessionGuard.ts | Protects private routes and validates active session | Guard | Prevents unauthorized access before rendering protected views |
+| AuthSessionGuard | [src/security/AuthSessionGuard.ts](src/security/AuthSessionGuard.ts) | Protects private routes and validates active session | Guard | Prevents unauthorized access before rendering protected views |
 | SessionManager | src/security/SessionManager.ts | Stores and manages session state | Singleton | A single shared session instance is required across the application |
 | SessionInvalidationService | src/security/SessionInvalidationService.ts | Handles session expiration and invalidation events | Observer | Reacts to session state changes and notifies dependent components |
 | ApiClient | src/apiClients/ApiClient.ts | Base HTTP client with reusable request logic | Template Method | Defines a common request flow reused by specialized API clients |
