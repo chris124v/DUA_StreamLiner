@@ -477,15 +477,15 @@ The following classes are proposed to keep the frontend architecture modular, te
 | Class / Interface | Location | Responsibility | Pattern | Justification |
 |------------------|----------|----------------|---------|--------------|
 | AuthSessionGuard | [src/security/AuthSessionGuard.ts](src/security/AuthSessionGuard.ts) | Protects private routes and validates active session | Guard | Prevents unauthorized access before rendering protected views |
-| SessionManager | src/security/SessionManager.ts | Stores and manages session state | Singleton | A single shared session instance is required across the application |
-| SessionInvalidationService | src/security/SessionInvalidationService.ts | Handles session expiration and invalidation events | Observer | Reacts to session state changes and notifies dependent components |
-| ApiClient | src/apiClients/ApiClient.ts | Base HTTP client with reusable request logic | Template Method | Defines a common request flow reused by specialized API clients |
-| NotificationHub | src/notifications/NotificationHub.ts | Publishes system-wide notifications | Observer (Pub-Sub) | Enables decoupled communication between components |
-| ProgressEventBus | src/events/ProgressEventBus.ts | Handles async process events | Event Bus | Centralizes asynchronous event distribution across the system |
-| GenerationStore | src/state/store/GenerationStore.ts | Stores DUA generation state | Singleton | Ensures a single global state source for consistency |
-| UIRefreshCoordinator | src/ui/UIRefreshCoordinator.ts | Coordinates UI updates across components | Mediator | Reduces direct dependencies between UI components |
-| DocumentProcessingStrategy | src/services/documentProcessing/strategies/DocumentProcessingStrategy.ts | Defines contract for processing different document types | Strategy | Enables interchangeable processing logic for PDF, Excel, Word, and images |
-| DUAFieldMapper | src/utils/DUAFieldMapper.ts | Maps extracted data into DUA field structure | Adapter | Transforms heterogeneous extracted data into a unified DUA format |
+| SessionManager | [src/security/SessionManager.ts](src/security/SessionManager.ts) | Stores and manages session state | Singleton | A single shared session instance is required across the application |
+| SessionInvalidationService | [src/security/SessionInvalidationService.ts](src/security/SessionInvalidationService.ts) | Handles session expiration and invalidation events | Observer | Reacts to session state changes and notifies dependent components |
+| ApiClient | [src/apiClients/ApiClient.ts](src/apiClients/ApiClient.ts) | Base HTTP client with reusable request logic | Template Method | Defines a common request flow reused by specialized API clients |
+| NotificationHub | [src/notifications/NotificationHub.ts](src/notifications/NotificationHub.ts) | Publishes system-wide notifications | Observer (Pub-Sub) | Enables decoupled communication between components |
+| ProgressEventBus | [src/events/ProgressEventBus.ts](src/events/ProgressEventBus.ts) | Handles async process events | Event Bus | Centralizes asynchronous event distribution across the system |
+| GenerationStore | [src/state/store/GenerationStore.ts](src/state/store/GenerationStore.ts) | Stores DUA generation state | Singleton | Ensures a single global state source for consistency |
+| UIRefreshCoordinator | [src/ui/UIRefreshCoordinator.ts](src/ui/UIRefreshCoordinator.ts) | Coordinates UI updates across components | Mediator | Reduces direct dependencies between UI components |
+| DocumentProcessingStrategy | [src/services/documentProcessing/strategies/DocumentProcessingStrategy.ts](src/services/documentProcessing/strategies/DocumentProcessingStrategy.ts) | Defines contract for processing different document types | Strategy | Enables interchangeable processing logic for PDF, Excel, Word, and images |
+| DUAFieldMapper | [src/utils/DUAFieldMapper.ts](src/utils/DUAFieldMapper.ts) | Maps extracted data into DUA field structure | Adapter | Transforms heterogeneous extracted data into a unified DUA format |
 
 ## 1.7 Scaffold SRC
 
