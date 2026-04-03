@@ -557,5 +557,222 @@ src
 
 # 2. Backend design 
 
+## Technology Stack
+ 
+* **REST API, HTTPS** — HTTP with TLS 1.3 encryption for secure communication
+* **Azure API Management + Azure App Service** — Gateway and hosting platform
+* **API standard with OpenAPI** — Swagger documentation auto-generated from ASP.NET Core
+* **For asynchronous operations and notifications use Azure Notification Hubs** — Real-time updates to frontend
+* **No load balance required** — Auto-scaling handled by Azure App Service
+* **API coding language .NET, ASP.NET Core** — C# 13.0+, ASP.NET Core 9.0+
+* **This is a monorepo solution, sharing the repository with the frontend, backend folder: duabusiness** — Single codebase, both frontend and backend together
+ 
+### Services vs Microservices
+ 
+**Decision: SERVICES (Monolithic approach)**
+ 
+* One ASP.NET Core application deployed as a single unit to Azure App Service
+* Multiple internal service layers using bounded contexts (DDD):
+  * **DuaContext** — DUA document lifecycle and validation
+  * **DocumentContext** — File upload and OCR processing
+  * **CustomsContext** — Compliance and tariff validation
+* Services communicate via direct calls (same process) or domain events (Azure Service Bus)
+* Not microservices: single deployment, single database, clear responsibility boundaries per service
+
+---
+
+## Security
+
+Security decisions for the backend.
+ 
+### HTTPS & Encryption in Transit
+* **Protocol:** HTTPS with TLS 1.3
+* **Certificate:** Managed by Azure App Service (auto-renewal)
+* **Enforcement:** All API endpoints require HTTPS; HTTP redirects to HTTPS
+* **Header:** HSTS (HTTP Strict-Transport-Security) enabled to force HTTPS
+ 
+### Database Encryption Algorithm
+* **Encryption at Rest:** Azure SQL Transparent Data Encryption (TDE) with AES-256
+* **Key Management:** Microsoft-managed keys (automatic rotation every 90 days)
+* **Customer-Managed Keys (CMK):** Optional for future compliance requirements
+* **Blob Storage Encryption:** Azure Storage Service Encryption (SSE) with AES-256 for documents and generated DUAs
+ 
+### Payload Size Limits
+* **Default max payload:** 10 MB (most endpoints)
+* **File upload endpoint:** 500 MB (document uploads)
+* **Bulk operations:** 50 MB (batch imports)
+* **Enforcement:** Validated at API Management layer and backend; requests exceeding limits return 413 Payload Too Large
+ 
+### Rate Limiting & Concurrent Connections
+* **Per-user rate limit:** 100 requests per minute (authenticated users)
+* **Per-IP rate limit:** 20 requests per minute (unauthenticated)
+* **Max concurrent connections:** 50 concurrent connections per user
+* **Burst allowance:** 10 additional requests per burst (within minute window)
+* **Throttle response:** 429 Too Many Requests with Retry-After header
+* **Enforcement:** Azure API Management handles rate limiting; no application code needed
+ 
+### Data Retention & Archival Policy
+* **Production data retention:** 3 years (Costa Rica customs law requirement)
+* **Active database:** Stores current + previous 2 years of DUAs and documents
+* **Archive storage:** After 3 years, data moves to Azure Archive Storage (cold tier)
+* **Archive location:** Mexico Central region (data residency compliance)
+* **Retention schedule:**
+  - Year 1: Hot storage (Azure SQL, fast access)
+  - Year 2: Cool storage (Azure Blob Cool tier, slower but cheaper)
+  - Year 3: Archive storage (Azure Blob Archive tier, minimum 90 days retention)
+  - After 3 years: Eligible for deletion per DPIA requirements
+* **Automated purge:** Job runs monthly to archive data older than 3 years to Archive Storage
+* **Audit trail:** All data movements logged to Application Insights with timestamp and reason
+ 
+### Authentication & Authorization 
+* **Method:** OAuth 2.0 + OpenID Connect via Azure Entra ID
+* **Token type:** JWT (JSON Web Tokens)
+* **Token expiry:** Access tokens expire in 15 minutes; refresh tokens in 7 days
+* **Roles:** Manager, Customs Agent (defined in Azure Entra ID security groups)
+* **Permissions:** Claim-based RBAC (claims embedded in JWT)
+ 
+### Input Validation
+* **Validation framework:** FluentValidation for all DTOs
+* **Validation scope:** All POST, PUT, PATCH endpoints validate input schema
+* **Error response:** 400 Bad Request with validation error details
+* **SQL Injection protection:** Parameterized queries via Entity Framework Core (no string concatenation)
+ 
+### Secrets Management (Synchronized with Frontend)
+* **Storage:** Azure Key Vault (no secrets in code repository)
+* **Secrets stored:** Database connection strings, API keys, encryption keys, OAuth credentials
+* **Access:** App Service authenticated via Managed Identity; no manual credential management
+* **Audit:** All secret access logged to Azure Monitor with user/service and timestamp
+
+--- 
+
+## Observability
+
+### Three Pillars
+ 
+**Logs**
+* Format: Structured JSON with trace_id, request_id, user_id, timestamp, level, message
+* Destination: Azure Monitor / Log Analytics
+* Correlation: X-Trace-ID header propagated across all requests.
+ 
+**Metrics**
+* What to measure: Latency (P95, P99), error rate, CPU utilization, memory usage, Service Bus queue depth
+* Destination: Azure Monitor
+* Tool: Grafana (optional visualization) or Azure Monitor dashboards
+ 
+**Distributed Traces**
+* Instrumentation: OpenTelemetry SDK for ASP.NET Core
+* Destination: Azure Application Insights
+* Scope: Trace every HTTP request from entry to exit, including database queries and Service Bus messages
+ 
+### Application Patterns
+ 
+* **Health Checks:** /health/live (liveness), /health/ready (readiness) endpoints checked every 30 seconds by Azure App Service
+* **Correlation IDs:** X-Trace-ID injected into all logs, metrics, and spans; same ID across Frontend and Backend
+* **SLIs:** 
+  - Availability: 99.9% (max 43 min downtime/month)
+  - Latency: 95% of requests < 500ms
+  - Error rate: < 0.5%
+ 
+### Events to Register
+ 
+* User login (success/failure), JWT validation failures, unauthorized access attempts
+* DUA created/updated/validated, document uploaded, OCR processing (started/completed), DUA generation completed
+* API requests (received/completed), database queries, Service Bus messages (enqueued/processed)
+* Exceptions/errors, health check results, performance degradation
+ 
+### Centralization
+ 
+* **Events Platform:** Azure Application Insights (logs, metrics, traces)
+* **Log Storage:** Azure Log Analytics (KQL queries, 90-day searchable retention)
+* **Dashboard Tool:** Azure Monitor Dashboards (primary)
+* **Frontend Synchronization:** Same X-Trace-ID and Log Analytics workspace for full-stack tracing
+
+---
+
+## Infrastructure  (DevOps)
+
+### CI/CD Tool
+* **Azure DevOps Pipelines** — Automates build, test, and deployment from code repository
+* Trigger: Automatic on push to develop (Dev) and main (Staging - Prod)
+ 
+### Deployment Tool
+* **Bicep** — Infrastructure as Code for Azure resources (App Service, SQL Database, Storage, Key Vault)
+* Environments: 
+  - Dev: B1 App Service (automatic deploy)
+  - Staging: B2 App Service (automatic deploy)
+  - Prod: S1 App Service with auto-scale (manual approval required, blue-green deployment)
+ 
+### Container Registry
+* **Azure Container Registry (ACR)** — Store Docker images with vulnerability scanning
+
+---
+
+## Availability
+
+### SLA Target
+* **99.99% uptime** — Maximum 52 minutes downtime per year
+* Applies to production environment only
+ 
+### Component SLAs & Recovery
+ 
+| Component | Native SLA | Recovery Strategy |
+|-----------|-----------|-------------------|
+| **Azure App Service** | 99.95% | Multi-AZ deployment (Standard tier+); auto-failover < 1 min |
+| **Azure SQL Database** | 99.99% (Zone-Redundant HA) | Zone-Redundant HA with automatic failover; RTO < 30 sec |
+| **Azure Storage (Blob)** | 99.99% | Geo-redundant storage (GRS); automatic failover |
+| **Azure Key Vault** | 99.99% | Geo-replicated; retry with backoff on transient failures |
+| **API Management** | 99.95% | Premium tier for higher SLA; circuit breaker for backend failures |
+| **Service Bus** | 99.99% | Dead Letter Queue (DLQ) for failed messages; automatic retry |
+| **Application Insights** | 99.95% | Best-effort; non-critical for availability |
+ 
+### Single Point of Failure Analysis (Post-Design)
+* Review architecture with full technology stack to identify SPOFs
+* For each SPOF, implement mitigation (redundancy, failover, or circuit breaker)
+ 
+### Resilience Patterns (Production)
+* **Circuit Breaker:** OCR service failures trigger circuit breaker (3 failures → 30s break)
+* **Retry with Backoff:** Exponential backoff (100ms → 200ms → 400ms) for transient failures
+* **Bulkhead:** OCR processing isolated to 20 max concurrent threads
+* **Degraded Mode:** If OCR unavailable, respond with partial data and auto-retry
+* **Health Checks:** /health/ready endpoint checked every 30 seconds; auto-restart if unhealthy
+
+---
+
+## Scalability
+
+### Elements That Scale with Request Volume
+ 
+* **App Service:** Auto-scale 2-10 instances (trigger: CPU > 70%)
+* **Azure SQL:** Vertical scaling (Standard → Premium tier)
+* **Service Bus:** Auto-scales throughput; workers process queue in parallel
+* **Background Workers:** Auto-scale OCR threads with queue depth
+* **Azure Cache (Redis):** Vertical scaling (Basic → Standard → Premium)
+* **Blob Storage:** Auto-scales (unlimited capacity)
+ 
+### Auto-Scaling Triggers
+ 
+* CPU > 70% → add instance
+* Request rate > 500 req/sec → add instance
+* Service Bus queue > 100 messages → increase workers
+* Max limit: 10 instances (cost control)
+
+---
+
+## Backend Key Workflows
+
+---
+
+## Architecture Diagram in Layers
+
+---
+
+## Design Considerations
+
+---
+
+## Source Code
+
+---
+
 # 3. Data Design
 
