@@ -138,7 +138,7 @@ Tecnología de frontend, de seguridad, librerías de terceros, frameworks, hosti
 - Observability framework: Google Cloud Operations Suite (Cloud Logging + Cloud Monitoring)
 - Authentication Server: Auth0
 - Credential Verification Server: NodeJS Backend
-- Cloud Secret Storage: Google Cloud
+- Cloud Secret Storage: Google Secret Manager
   
 ## 1.2 UX UI analysis
 Here we define the desired usability attributes of the application, a preliminary UX design in the form of wireframes, and evidence of UX testing with real users that validates the preliminary design.
@@ -338,7 +338,7 @@ The authentication flow is therefore:
 
 Sensitive configuration data and secrets are stored in Google Cloud secure storage services.
 
-**Google Cloud is responsible for storing:**
+**Google Secret Manager is responsible for storing:**
 
 - API keys
 
@@ -558,93 +558,74 @@ src
 # 2. Backend design 
 
 ## Technology Stack
- 
-* **REST API, HTTPS** — HTTP with TLS 1.3 encryption for secure communication
-* **Google Cloud API Gateway + Cloud Run** — API gateway and hosting platform (compatible with GCP ecosystem)
-* **API standard with OpenAPI** — Swagger documentation auto-generated from ASP.NET Core
-* **For asynchronous operations and notifications use Google Cloud Pub/Sub + Cloud Tasks** — Asynchronous job processing and real-time notifications
-* **No load balance required** — Auto-scaling handled by Cloud Run (serverless, scales 0-N instances)
-* **API coding language .NET, ASP.NET Core** — C# 13.0+, ASP.NET Core 9.0+ (containerized as Docker image)
-* **This is a monorepo solution, sharing the repository with the frontend, backend folder: duabusiness** — Single codebase, both frontend and backend together
- 
-### Services vs Microservices
- 
-**Decision: SERVICES (Monolithic approach)**
- 
-* One ASP.NET Core application deployed as a single unit to Google Cloud Run
-* Multiple internal service layers using bounded contexts (DDD):
-  * **DuaContext** — DUA document lifecycle and validation
-  * **DocumentContext** — File upload and OCR processing
-  * **CustomsContext** — Compliance and tariff validation
-* Services communicate via direct calls (same process) or domain events (Google Cloud Pub/Sub)
-* Not microservices: single deployment, single database, clear responsibility boundaries per service
+
+- API type: REST API, HTTPS
+- API standard: OpenAPI 3.1
+- API gateway: Google Cloud API Gateway
+- Hosting: Google Cloud Run (monorepo, carpeta: duabusiness/)
+- Architecture: Monorepo con Domain-Driven Design (DDD), servicios organizados por dominio
+- Coding language: Python 3.12
+- Web framework: FastAPI 0.115
+- Unit testing framework: Pytest 8.3
+- Data validation framework: Pydantic 2.7
+- Asynchronous operations & notifications: Google Cloud Pub/Sub
+- Document & file storage: Google Cloud Storage
+- OCR processing: Google Cloud Document AI
+- AI/ML extraction: Google Vertex AI (Gemini)
+- Secret management: Google Secret Manager
+- Code repository: GitHub (monorepo compartido con el frontend)
+- CI/CD automation: GitHub Actions
+- Environments: Development, Stage, Production
+- Environment deployments: GitHub Environments
+- Observability: Google Cloud Operations Suite (Cloud Logging + Cloud Monitoring)
+- Authentication verification: Auth0 (validación de tokens JWT en sincronía con el frontend)
+- No load balancer required
+- Services architecture: Domain-driven services
+- Database: Google Cloud SQL (PostgreSQL 16)
 
 ---
 
 ## Security
 
-Security decisions for the backend.
- 
- 
-Security decisions for the backend aligned with Google Cloud Platform.
- 
-### HTTPS & Encryption in Transit
-* **Protocol:** HTTPS with TLS 1.3
-* **Certificate:** Managed by Google Cloud Load Balancer / Cloud Run (auto-renewal via Google-managed certificates)
-* **Enforcement:** All API endpoints require HTTPS; HTTP redirects to HTTPS
-* **Header:** HSTS (HTTP Strict-Transport-Security) enabled to force HTTPS
- 
-### Database Encryption Algorithm
-* **Encryption at Rest:** Google Cloud SQL Automatic Encryption (AES-256)
-* **Key Management:** Google-managed keys (automatic rotation)
-* **Customer-Managed Keys (CMEK):** Optional for future compliance requirements (via Cloud KMS)
-* **Cloud Storage Encryption:** Google Cloud Storage Server-Side Encryption (SSE) with AES-256 for documents and generated DUAs
- 
-### Payload Size Limits
-* **Default max payload:** 10 MB (most endpoints)
-* **File upload endpoint:** 500 MB (document uploads)
-* **Bulk operations:** 50 MB (batch imports)
-* **Enforcement:** Validated at Cloud API Gateway layer and backend; requests exceeding limits return 413 Payload Too Large
- 
-### Rate Limiting & Concurrent Connections
-* **Per-user rate limit:** 100 requests per minute (authenticated users)
-* **Per-IP rate limit:** 20 requests per minute (unauthenticated)
-* **Max concurrent connections:** 50 concurrent connections per user
-* **Burst allowance:** 10 additional requests per burst (within minute window)
-* **Throttle response:** 429 Too Many Requests with Retry-After header
-* **Enforcement:** Google Cloud API Gateway handles rate limiting; no application code needed
- 
-### Data Retention & Archival Policy
-* **Production data retention:** 3 years (Costa Rica customs law requirement)
-* **Active database:** Stores current + previous 2 years of DUAs and documents in Google Cloud SQL
-* **Archive storage:** After 3 years, data moves to Google Cloud Storage Archive class (cold tier)
-* **Archive location:** us-central1 or us-west1 (closest US region to Costa Rica, data residency compliance)
-* **Retention schedule:**
-  - Year 1: Hot storage (Cloud SQL, fast access)
-  - Year 2: Cool storage (Cloud Storage Standard → Nearline, slower but cheaper)
-  - Year 3: Archive storage (Cloud Storage Archive class, minimum 90 days retention)
-  - After 3 years: Eligible for deletion per DPIA requirements
-* **Automated purge:** Cloud Scheduler job runs monthly to archive data older than 3 years to Cloud Storage Archive
-* **Audit trail:** All data movements logged to Cloud Logging with timestamp and reason
- 
 ### Authentication & Authorization
-* **Method:** OAuth 2.0 + OpenID Connect via Google Identity Platform (same provider as frontend)
-* **Token type:** JWT (JSON Web Tokens)
-* **Token expiry:** Access tokens expire in 15 minutes; refresh tokens in 7 days
-* **Roles:** Manager, Customs Agent (defined in Google Cloud Identity or custom claims in JWT)
-* **Permissions:** Claim-based RBAC (claims embedded in JWT, validated by backend)
+- Authentication delegated to Auth0 with Google OAuth 
+- JWT tokens validated on every request; expiration: 1 hour, automatic rotation with refresh token
+- Roles and permissions validated at the backend level: `Manager` and `Customs Agent` with the same permission codes defined in the frontend
+- Per-endpoint authorization enforced using permission claims from the JWT payload
  
-### Input Validation
-* **Validation framework:** FluentValidation for all DTOs
-* **Validation scope:** All POST, PUT, PATCH endpoints validate input schema
-* **Error response:** 400 Bad Request with validation error details
-* **SQL Injection protection:** Parameterized queries via Entity Framework Core (no string concatenation)
+### Transport
+- HTTPS required on all endpoints, TLS 1.3
+- Internal service-to-service communication via HTTPS with Google-managed certificates
  
-### Secrets Management (Synchronized with Frontend)
-* **Storage:** Google Secret Manager (no secrets in code repository)
-* **Secrets stored:** Cloud SQL connection strings, API keys, encryption keys, OAuth credentials
-* **Access:** Cloud Run service authenticated via Workload Identity (IAM-based, no manual credentials)
-* **Audit:** All secret access logged to Cloud Logging with service account and timestamp
+### Encryption at Rest
+- Database encrypted with AES-256 using Google Cloud KMS (Customer-Managed Encryption Keys)
+- Files in Google Cloud Storage encrypted with AES-256 by default
+ 
+### Secrets
+- All secrets managed in Google Secret Manager; never stored in the repository or hardcoded as environment variables.
+ 
+### API Surface
+- General maximum payload size: **10 MB**; exception on the document upload endpoint: **50 MB**
+- Rate limit: maximum **100 concurrent requests per user**
+- Input validation with Pydantic on all endpoints
+- OWASP API Top 10 protections applied
+ 
+### Network
+- Backend deployed within a private VPC on GCP
+- Database hosted in a private subnet with no public internet exposure
+- Google Cloud Armor configured as firewall for the API Gateway
+ 
+### Data Retention
+* Production data retention: 3 years (Costa Rica customs law requirement)
+* Active database: Stores current + previous 2 years of DUAs and documents in Google Cloud SQL
+* Archive storage: After 3 years, data moves to Google Cloud Storage Archive class 
+* Archive location: us-central1 or us-west1 
+* Retention schedule
+  - Year 1: Hot storage (Cloud SQL, fast access)
+  - Year 2: Cool storage (Google Cloud Storage Standard)
+  - Year 3: Archive storage (Cloud Storage Archive class, minimum 90 days retention)
+  - After 5 years (Automated Purge): Cloud Scheduler job runs monthly to archive data older than 3 years to Cloud Storage Archive
+* Audit trail: All data movements logged to Cloud Logging with timestamp and reason
 
 --- 
 
