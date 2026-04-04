@@ -560,23 +560,23 @@ src
 ## Technology Stack
  
 * **REST API, HTTPS** — HTTP with TLS 1.3 encryption for secure communication
-* **Azure API Management + Azure App Service** — Gateway and hosting platform
+* **Google Cloud API Gateway + Cloud Run** — API gateway and hosting platform (compatible with GCP ecosystem)
 * **API standard with OpenAPI** — Swagger documentation auto-generated from ASP.NET Core
-* **For asynchronous operations and notifications use Azure Notification Hubs** — Real-time updates to frontend
-* **No load balance required** — Auto-scaling handled by Azure App Service
-* **API coding language .NET, ASP.NET Core** — C# 13.0+, ASP.NET Core 9.0+
+* **For asynchronous operations and notifications use Google Cloud Pub/Sub + Cloud Tasks** — Asynchronous job processing and real-time notifications
+* **No load balance required** — Auto-scaling handled by Cloud Run (serverless, scales 0-N instances)
+* **API coding language .NET, ASP.NET Core** — C# 13.0+, ASP.NET Core 9.0+ (containerized as Docker image)
 * **This is a monorepo solution, sharing the repository with the frontend, backend folder: duabusiness** — Single codebase, both frontend and backend together
  
 ### Services vs Microservices
  
 **Decision: SERVICES (Monolithic approach)**
  
-* One ASP.NET Core application deployed as a single unit to Azure App Service
+* One ASP.NET Core application deployed as a single unit to Google Cloud Run
 * Multiple internal service layers using bounded contexts (DDD):
   * **DuaContext** — DUA document lifecycle and validation
   * **DocumentContext** — File upload and OCR processing
   * **CustomsContext** — Compliance and tariff validation
-* Services communicate via direct calls (same process) or domain events (Azure Service Bus)
+* Services communicate via direct calls (same process) or domain events (Google Cloud Pub/Sub)
 * Not microservices: single deployment, single database, clear responsibility boundaries per service
 
 ---
@@ -585,23 +585,26 @@ src
 
 Security decisions for the backend.
  
+ 
+Security decisions for the backend aligned with Google Cloud Platform.
+ 
 ### HTTPS & Encryption in Transit
 * **Protocol:** HTTPS with TLS 1.3
-* **Certificate:** Managed by Azure App Service (auto-renewal)
+* **Certificate:** Managed by Google Cloud Load Balancer / Cloud Run (auto-renewal via Google-managed certificates)
 * **Enforcement:** All API endpoints require HTTPS; HTTP redirects to HTTPS
 * **Header:** HSTS (HTTP Strict-Transport-Security) enabled to force HTTPS
  
 ### Database Encryption Algorithm
-* **Encryption at Rest:** Azure SQL Transparent Data Encryption (TDE) with AES-256
-* **Key Management:** Microsoft-managed keys (automatic rotation every 90 days)
-* **Customer-Managed Keys (CMK):** Optional for future compliance requirements
-* **Blob Storage Encryption:** Azure Storage Service Encryption (SSE) with AES-256 for documents and generated DUAs
+* **Encryption at Rest:** Google Cloud SQL Automatic Encryption (AES-256)
+* **Key Management:** Google-managed keys (automatic rotation)
+* **Customer-Managed Keys (CMEK):** Optional for future compliance requirements (via Cloud KMS)
+* **Cloud Storage Encryption:** Google Cloud Storage Server-Side Encryption (SSE) with AES-256 for documents and generated DUAs
  
 ### Payload Size Limits
 * **Default max payload:** 10 MB (most endpoints)
 * **File upload endpoint:** 500 MB (document uploads)
 * **Bulk operations:** 50 MB (batch imports)
-* **Enforcement:** Validated at API Management layer and backend; requests exceeding limits return 413 Payload Too Large
+* **Enforcement:** Validated at Cloud API Gateway layer and backend; requests exceeding limits return 413 Payload Too Large
  
 ### Rate Limiting & Concurrent Connections
 * **Per-user rate limit:** 100 requests per minute (authenticated users)
@@ -609,27 +612,27 @@ Security decisions for the backend.
 * **Max concurrent connections:** 50 concurrent connections per user
 * **Burst allowance:** 10 additional requests per burst (within minute window)
 * **Throttle response:** 429 Too Many Requests with Retry-After header
-* **Enforcement:** Azure API Management handles rate limiting; no application code needed
+* **Enforcement:** Google Cloud API Gateway handles rate limiting; no application code needed
  
 ### Data Retention & Archival Policy
 * **Production data retention:** 3 years (Costa Rica customs law requirement)
-* **Active database:** Stores current + previous 2 years of DUAs and documents
-* **Archive storage:** After 3 years, data moves to Azure Archive Storage (cold tier)
-* **Archive location:** Mexico Central region (data residency compliance)
+* **Active database:** Stores current + previous 2 years of DUAs and documents in Google Cloud SQL
+* **Archive storage:** After 3 years, data moves to Google Cloud Storage Archive class (cold tier)
+* **Archive location:** us-central1 or us-west1 (closest US region to Costa Rica, data residency compliance)
 * **Retention schedule:**
-  - Year 1: Hot storage (Azure SQL, fast access)
-  - Year 2: Cool storage (Azure Blob Cool tier, slower but cheaper)
-  - Year 3: Archive storage (Azure Blob Archive tier, minimum 90 days retention)
+  - Year 1: Hot storage (Cloud SQL, fast access)
+  - Year 2: Cool storage (Cloud Storage Standard → Nearline, slower but cheaper)
+  - Year 3: Archive storage (Cloud Storage Archive class, minimum 90 days retention)
   - After 3 years: Eligible for deletion per DPIA requirements
-* **Automated purge:** Job runs monthly to archive data older than 3 years to Archive Storage
-* **Audit trail:** All data movements logged to Application Insights with timestamp and reason
+* **Automated purge:** Cloud Scheduler job runs monthly to archive data older than 3 years to Cloud Storage Archive
+* **Audit trail:** All data movements logged to Cloud Logging with timestamp and reason
  
-### Authentication & Authorization 
-* **Method:** OAuth 2.0 + OpenID Connect via Azure Entra ID
+### Authentication & Authorization
+* **Method:** OAuth 2.0 + OpenID Connect via Google Identity Platform (same provider as frontend)
 * **Token type:** JWT (JSON Web Tokens)
 * **Token expiry:** Access tokens expire in 15 minutes; refresh tokens in 7 days
-* **Roles:** Manager, Customs Agent (defined in Azure Entra ID security groups)
-* **Permissions:** Claim-based RBAC (claims embedded in JWT)
+* **Roles:** Manager, Customs Agent (defined in Google Cloud Identity or custom claims in JWT)
+* **Permissions:** Claim-based RBAC (claims embedded in JWT, validated by backend)
  
 ### Input Validation
 * **Validation framework:** FluentValidation for all DTOs
@@ -638,10 +641,10 @@ Security decisions for the backend.
 * **SQL Injection protection:** Parameterized queries via Entity Framework Core (no string concatenation)
  
 ### Secrets Management (Synchronized with Frontend)
-* **Storage:** Azure Key Vault (no secrets in code repository)
-* **Secrets stored:** Database connection strings, API keys, encryption keys, OAuth credentials
-* **Access:** App Service authenticated via Managed Identity; no manual credential management
-* **Audit:** All secret access logged to Azure Monitor with user/service and timestamp
+* **Storage:** Google Secret Manager (no secrets in code repository)
+* **Secrets stored:** Cloud SQL connection strings, API keys, encryption keys, OAuth credentials
+* **Access:** Cloud Run service authenticated via Workload Identity (IAM-based, no manual credentials)
+* **Audit:** All secret access logged to Cloud Logging with service account and timestamp
 
 --- 
 
@@ -651,22 +654,22 @@ Security decisions for the backend.
  
 **Logs**
 * Format: Structured JSON with trace_id, request_id, user_id, timestamp, level, message
-* Destination: Azure Monitor / Log Analytics
-* Correlation: X-Trace-ID header propagated across all requests.
+* Destination: Google Cloud Logging (same as frontend)
+* Correlation: X-Trace-ID header propagated across all requests (unified with frontend logs)
  
 **Metrics**
-* What to measure: Latency (P95, P99), error rate, CPU utilization, memory usage, Service Bus queue depth
-* Destination: Azure Monitor
-* Tool: Grafana (optional visualization) or Azure Monitor dashboards
+* What to measure: Latency (P95, P99), error rate, CPU utilization, memory usage, Pub/Sub queue depth
+* Destination: Google Cloud Monitoring
+* Tool: Grafana (optional visualization) or Google Cloud Monitoring dashboards
  
 **Distributed Traces**
 * Instrumentation: OpenTelemetry SDK for ASP.NET Core
-* Destination: Azure Application Insights
-* Scope: Trace every HTTP request from entry to exit, including database queries and Service Bus messages
+* Destination: Google Cloud Trace
+* Scope: Trace every HTTP request from entry to exit, including Cloud SQL queries and Pub/Sub messages
  
 ### Application Patterns
  
-* **Health Checks:** /health/live (liveness), /health/ready (readiness) endpoints checked every 30 seconds by Azure App Service
+* **Health Checks:** /health/live (liveness), /health/ready (readiness) endpoints checked every 30 seconds by Cloud Run
 * **Correlation IDs:** X-Trace-ID injected into all logs, metrics, and spans; same ID across Frontend and Backend
 * **SLIs:** 
   - Availability: 99.9% (max 43 min downtime/month)
@@ -677,33 +680,33 @@ Security decisions for the backend.
  
 * User login (success/failure), JWT validation failures, unauthorized access attempts
 * DUA created/updated/validated, document uploaded, OCR processing (started/completed), DUA generation completed
-* API requests (received/completed), database queries, Service Bus messages (enqueued/processed)
+* API requests (received/completed), database queries, Pub/Sub messages (enqueued/processed)
 * Exceptions/errors, health check results, performance degradation
  
 ### Centralization
  
-* **Events Platform:** Azure Application Insights (logs, metrics, traces)
-* **Log Storage:** Azure Log Analytics (KQL queries, 90-day searchable retention)
-* **Dashboard Tool:** Azure Monitor Dashboards (primary)
-* **Frontend Synchronization:** Same X-Trace-ID and Log Analytics workspace for full-stack tracing
+* **Events Platform:** Google Cloud Operations Suite (Cloud Logging + Cloud Monitoring + Cloud Trace)
+* **Log Storage:** Cloud Logging (structured logs, 30-day searchable retention, 90-day total retention)
+* **Dashboard Tool:** Google Cloud Monitoring Dashboards (primary) or Grafana (optional)
+* **Frontend Synchronization:** Same X-Trace-ID and Cloud Logging workspace for full-stack tracing
 
 ---
 
 ## Infrastructure  (DevOps)
 
 ### CI/CD Tool
-* **Azure DevOps Pipelines** — Automates build, test, and deployment from code repository
-* Trigger: Automatic on push to develop (Dev) and main (Staging - Prod)
+* **GitHub Actions** — Automates build, test, and deployment from code repository (same as frontend)
+* Trigger: Automatic on push to develop (Dev) and main (Staging → Prod)
  
 ### Deployment Tool
-* **Bicep** — Infrastructure as Code for Azure resources (App Service, SQL Database, Storage, Key Vault)
+* **Terraform** — Infrastructure as Code for Google Cloud resources (Cloud Run, Cloud SQL, Cloud Storage, Secret Manager)
 * Environments: 
-  - Dev: B1 App Service (automatic deploy)
-  - Staging: B2 App Service (automatic deploy)
-  - Prod: S1 App Service with auto-scale (manual approval required, blue-green deployment)
+  - Dev: Cloud Run with 2 minimum instances (automatic deploy)
+  - Staging: Cloud Run with 3 minimum instances (automatic deploy)
+  - Prod: Cloud Run with auto-scale 5-50 instances (manual approval required, blue-green deployment)
  
 ### Container Registry
-* **Azure Container Registry (ACR)** — Store Docker images with vulnerability scanning
+* **Google Artifact Registry** — Store Docker images with automatic vulnerability scanning and binary authorization
 
 ---
 
@@ -717,13 +720,13 @@ Security decisions for the backend.
  
 | Component | Native SLA | Recovery Strategy |
 |-----------|-----------|-------------------|
-| **Azure App Service** | 99.95% | Multi-AZ deployment (Standard tier+); auto-failover < 1 min |
-| **Azure SQL Database** | 99.99% (Zone-Redundant HA) | Zone-Redundant HA with automatic failover; RTO < 30 sec |
-| **Azure Storage (Blob)** | 99.99% | Geo-redundant storage (GRS); automatic failover |
-| **Azure Key Vault** | 99.99% | Geo-replicated; retry with backoff on transient failures |
-| **API Management** | 99.95% | Premium tier for higher SLA; circuit breaker for backend failures |
-| **Service Bus** | 99.99% | Dead Letter Queue (DLQ) for failed messages; automatic retry |
-| **Application Insights** | 99.95% | Best-effort; non-critical for availability |
+| **Google Cloud Run** | 99.95% | Multi-region deployment (us-central1 + us-west1); auto-failover < 1 min |
+| **Google Cloud SQL** | 99.99% (High Availability) | Cloud SQL HA with automatic failover and automated backups; RTO < 30 sec |
+| **Google Cloud Storage** | 99.99% | Geo-redundant storage (GRS); automatic failover to secondary region |
+| **Google Secret Manager** | 99.99% | Geo-replicated; retry with backoff on transient failures |
+| **Google Cloud API Gateway** | 99.95% | Premium tier for higher SLA; circuit breaker for backend failures |
+| **Google Cloud Pub/Sub** | 99.99% | Dead Letter Policy for failed messages; automatic retry with exponential backoff |
+| **Google Cloud Logging** | 99.95% | Best-effort; non-critical for availability |
  
 ### Single Point of Failure Analysis (Post-Design)
 * Review architecture with full technology stack to identify SPOFs
@@ -732,9 +735,9 @@ Security decisions for the backend.
 ### Resilience Patterns (Production)
 * **Circuit Breaker:** OCR service failures trigger circuit breaker (3 failures → 30s break)
 * **Retry with Backoff:** Exponential backoff (100ms → 200ms → 400ms) for transient failures
-* **Bulkhead:** OCR processing isolated to 20 max concurrent threads
-* **Degraded Mode:** If OCR unavailable, respond with partial data and auto-retry
-* **Health Checks:** /health/ready endpoint checked every 30 seconds; auto-restart if unhealthy
+* **Bulkhead:** OCR processing isolated to 20 max concurrent threads via Pub/Sub subscription concurrency limits
+* **Degraded Mode:** If OCR unavailable, respond with partial data and auto-retry via Cloud Tasks
+* **Health Checks:** /health/ready endpoint checked every 30 seconds by Cloud Run; auto-restart if unhealthy
 
 ---
 
@@ -742,19 +745,21 @@ Security decisions for the backend.
 
 ### Elements That Scale with Request Volume
  
-* **App Service:** Auto-scale 2-10 instances (trigger: CPU > 70%)
-* **Azure SQL:** Vertical scaling (Standard → Premium tier)
-* **Service Bus:** Auto-scales throughput; workers process queue in parallel
-* **Background Workers:** Auto-scale OCR threads with queue depth
-* **Azure Cache (Redis):** Vertical scaling (Basic → Standard → Premium)
-* **Blob Storage:** Auto-scales (unlimited capacity)
+* **Cloud Run:** Auto-scale 5-50 instances (trigger: CPU > 70% or request concurrency > 80)
+* **Cloud SQL:** Vertical scaling (Standard → Premium tier); read replicas for read-heavy workloads
+* **Pub/Sub:** Auto-scales throughput; subscriber concurrency auto-adjusts (max 1000 concurrent pulls per subscription)
+* **Background Workers (Cloud Tasks):** Auto-scale job processing threads based on queue depth
+* **Cloud Memorystore (Redis):** Vertical scaling (Basic → Standard → Premium); auto-failover in Standard+ tiers
+* **Cloud Storage:** Auto-scales (unlimited capacity, unlimited throughput)
  
 ### Auto-Scaling Triggers
  
-* CPU > 70% → add instance
-* Request rate > 500 req/sec → add instance
-* Service Bus queue > 100 messages → increase workers
-* Max limit: 10 instances (cost control)
+* CPU > 70% → add Cloud Run instance
+* Request concurrency > 80 → add Cloud Run instance
+* Pub/Sub queue depth > 100 messages → increase subscriber concurrency
+* Cloud SQL CPU > 80% → scale up (vertical); add read replica if reads spike
+* Max limit: 50 Cloud Run instances (cost control)
+ 
 
 ---
 
