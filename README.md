@@ -562,13 +562,13 @@ src
 - API type: REST API, HTTPS
 - API standard: OpenAPI 3.1
 - API gateway: Google Cloud API Gateway
-- Hosting: Google Cloud Run (monorepo, carpeta: duabusiness/)
-- Architecture: Monorepo con Domain-Driven Design (DDD), servicios organizados por dominio
+- Hosting: Google Cloud Run (monorepo, folder: duabusiness/)
+- Architecture: Monorepo with Domain-Driven Design (DDD)
 - Coding language: Python 3.12
 - Web framework: FastAPI 0.115
 - Unit testing framework: Pytest 8.3
 - Data validation framework: Pydantic 2.7
-- Asynchronous operations & notifications: Google Cloud Pub/Sub
+- Asynchronous operations & notifications: Google Cloud Pub/Sub and Google Cloud Tasks
 - Document & file storage: Google Cloud Storage
 - OCR processing: Google Cloud Document AI
 - AI/ML extraction: Google Vertex AI (Gemini)
@@ -582,7 +582,9 @@ src
 - No load balancer required
 - Services architecture: Domain-driven services
 - Database: Google Cloud SQL (PostgreSQL 16)
-
+- Encryption key management: Google Cloud KMS
+- Container registry: Google Artifact Registry 
+- Session cache: Google Cloud Memorystore (Redis)
 ---
 
 ## Security
@@ -605,14 +607,14 @@ src
 - All secrets managed in Google Secret Manager; never stored in the repository or hardcoded as environment variables.
  
 ### API Surface
-- General maximum payload size: **10 MB**; exception on the document upload endpoint: **50 MB**
-- Rate limit: maximum **100 concurrent requests per user**
+- General maximum payload size: 10 MB; exception on the document upload endpoint: 50 MB
+- Rate limit: maximum 100 concurrent requests per user
 - Input validation with Pydantic on all endpoints
 - OWASP API Top 10 protections applied
  
 ### Network
 - Backend deployed within a private VPC on GCP
-- Database hosted in a private subnet with no public internet exposure
+- Google Cloud SQL configured with no public IP, accessible only within the VPC
 - Google Cloud Armor configured as firewall for the API Gateway
  
 ### Data Retention
@@ -621,8 +623,8 @@ src
 * Archive storage: After 3 years, data moves to Google Cloud Storage Archive class 
 * Archive location: us-central1 or us-west1 
 * Retention schedule
-  - Year 1: Hot storage (Cloud SQL, fast access)
-  - Year 2: Cool storage (Google Cloud Storage Standard)
+  - Year 1: Hot storage we use Google Cloud SQL production data
+  - Year 2: Cool storage (Google Cloud Storage Standard) for the files
   - Year 3: Archive storage (Cloud Storage Archive class, minimum 90 days retention)
   - After 5 years (Automated Purge): Cloud Scheduler job runs monthly to archive data older than 3 years to Cloud Storage Archive
 * Audit trail: All data movements logged to Cloud Logging with timestamp and reason
@@ -630,29 +632,27 @@ src
 --- 
 
 ## Observability
-
-### Three Pillars
  
-**Logs**
+### Logs
 * Format: Structured JSON with trace_id, request_id, user_id, timestamp, level, message
 * Destination: Google Cloud Logging (same as frontend)
 * Correlation: X-Trace-ID header propagated across all requests (unified with frontend logs)
  
-**Metrics**
+### Metrics
 * What to measure: Latency (P95, P99), error rate, CPU utilization, memory usage, Pub/Sub queue depth
 * Destination: Google Cloud Monitoring
-* Tool: Grafana (optional visualization) or Google Cloud Monitoring dashboards
+* Tool: Google Cloud Monitoring dashboards
  
-**Distributed Traces**
-* Instrumentation: OpenTelemetry SDK for ASP.NET Core
+### Distributed Traces
+* Instrumentation: OpenTelemetry SDK for Python (FastAPI)
 * Destination: Google Cloud Trace
 * Scope: Trace every HTTP request from entry to exit, including Cloud SQL queries and Pub/Sub messages
  
 ### Application Patterns
  
-* **Health Checks:** /health/live (liveness), /health/ready (readiness) endpoints checked every 30 seconds by Cloud Run
-* **Correlation IDs:** X-Trace-ID injected into all logs, metrics, and spans; same ID across Frontend and Backend
-* **SLIs:** 
+* Health Checks: /health/live (liveness), /health/ready (readiness) endpoints checked every 30 seconds by Cloud Run
+* Correlation IDs: X-Trace-ID injected into all logs, metrics, and spans; same ID across Frontend and Backend
+* Service Level Indcators: 
   - Availability: 99.9% (max 43 min downtime/month)
   - Latency: 95% of requests < 500ms
   - Error rate: < 0.5%
@@ -666,59 +666,63 @@ src
  
 ### Centralization
  
-* **Events Platform:** Google Cloud Operations Suite (Cloud Logging + Cloud Monitoring + Cloud Trace)
-* **Log Storage:** Cloud Logging (structured logs, 30-day searchable retention, 90-day total retention)
-* **Dashboard Tool:** Google Cloud Monitoring Dashboards (primary) or Grafana (optional)
-* **Frontend Synchronization:** Same X-Trace-ID and Cloud Logging workspace for full-stack tracing
+* Events Platform: Google Cloud Operations Suite (Cloud Logging + Cloud Monitoring + Cloud Trace)
+* Log Storage: Cloud Logging (structured logs retained 1 year; audit logs follow the retention schedule: Year 1 hot storage, Year 2 cool storage, Year 3+ archive, purged after 5 years via Cloud Scheduler)
+* Dashboard Tool: Google Cloud Monitoring Dashboards 
+* Frontend Synchronization: Same X-Trace-ID and Cloud Logging workspace for full-stack tracing
 
 ---
 
 ## Infrastructure  (DevOps)
 
 ### CI/CD Tool
-* **GitHub Actions** — Automates build, test, and deployment from code repository (same as frontend)
+* GitHub Actions: Automates build, test, and deployment from code repository
 * Trigger: Automatic on push to develop (Dev) and main (Staging → Prod)
  
 ### Deployment Tool
-* **Terraform** — Infrastructure as Code for Google Cloud resources (Cloud Run, Cloud SQL, Cloud Storage, Secret Manager)
+* Terraform: Infrastructure as Code for Google Cloud resources (Cloud Run, Cloud SQL, Cloud Storage, Secret Manager)
 * Environments: 
   - Dev: Cloud Run with 2 minimum instances (automatic deploy)
   - Staging: Cloud Run with 3 minimum instances (automatic deploy)
   - Prod: Cloud Run with auto-scale 5-50 instances (manual approval required, blue-green deployment)
  
 ### Container Registry
-* **Google Artifact Registry** — Store Docker images with automatic vulnerability scanning and binary authorization
+* Google Artifact Registry: Store Docker images with automatic vulnerability scanning and binary authorization (approval)
 
 ---
 
 ## Availability
 
-### SLA Target
-* **99.99% uptime** — Maximum 52 minutes downtime per year
+### SLA (Service Level Agreement) Target For The Business
+* 99.9% uptime: Maximum 8.7 hours downtime per year
 * Applies to production environment only
- 
-### Component SLAs & Recovery
- 
+
+### Component SLAs & Recovery From the Providers
+
 | Component | Native SLA | Recovery Strategy |
 |-----------|-----------|-------------------|
 | **Google Cloud Run** | 99.95% | Multi-region deployment (us-central1 + us-west1); auto-failover < 1 min |
-| **Google Cloud SQL** | 99.99% (High Availability) | Cloud SQL HA with automatic failover and automated backups; RTO < 30 sec |
-| **Google Cloud Storage** | 99.99% | Geo-redundant storage (GRS); automatic failover to secondary region |
+| **Google Cloud SQL** | 99.99% (HA) | Cloud SQL HA with automatic failover and automated backups; RTO < 30 sec |
+| **Google Cloud Storage** | 99.99% | Geo-redundant storage; automatic failover to secondary region |
 | **Google Secret Manager** | 99.99% | Geo-replicated; retry with backoff on transient failures |
-| **Google Cloud API Gateway** | 99.95% | Premium tier for higher SLA; circuit breaker for backend failures |
-| **Google Cloud Pub/Sub** | 99.99% | Dead Letter Policy for failed messages; automatic retry with exponential backoff |
+| **Google Cloud API Gateway** | 99.95% | Premium tier; circuit breaker for backend failures |
+| **Google Cloud Pub/Sub** | 99.99% | Dead Letter Policy for failed messages; exponential backoff retry |
+| **Google Cloud Document AI** | 99.9% | Retry with exponential backoff; degraded mode returns partial data |
+| **Google Vertex AI (Gemini)** | 99.9% | Circuit breaker on 3 consecutive failures; fallback to manual review flag |
+| **Auth0** | 99.99% | Managed HA by Auth0; JWT cache allows short-term offline tolerance |
 | **Google Cloud Logging** | 99.95% | Best-effort; non-critical for availability |
- 
-### Single Point of Failure Analysis (Post-Design)
-* Review architecture with full technology stack to identify SPOFs
-* For each SPOF, implement mitigation (redundancy, failover, or circuit breaker)
- 
+
+### Single Point of Failure Analysis
+* Vertex AI: If unavailable, DUA generation fails entirely; mitigated with circuit breaker and degraded mode
+* Document AI: If unavailable, OCR fails; mitigated with retry and partial response fallback
+* Cloud SQL: Mitigated with Cloud SQL HA (Secondary Instance of the DB) and automatic failover
+
 ### Resilience Patterns (Production)
-* **Circuit Breaker:** OCR service failures trigger circuit breaker (3 failures → 30s break)
-* **Retry with Backoff:** Exponential backoff (100ms → 200ms → 400ms) for transient failures
-* **Bulkhead:** OCR processing isolated to 20 max concurrent threads via Pub/Sub subscription concurrency limits
-* **Degraded Mode:** If OCR unavailable, respond with partial data and auto-retry via Cloud Tasks
-* **Health Checks:** /health/ready endpoint checked every 30 seconds by Cloud Run; auto-restart if unhealthy
+* Circuit Breaker: Vertex AI and Document AI failures trigger circuit breaker (3 failures → 30s break)
+* Retry with Backoff: Exponential backoff (100ms → 200ms → 400ms) for transient failures
+* Bulkhead: OCR processing isolated to 20 max concurrent threads via Pub/Sub concurrency limits
+* Degraded Mode: If OCR or AI unavailable, respond with partial data and flag fields for manual review
+* Health Checks: /health/ready endpoint checked every 30 seconds by Cloud Run; auto-restart if unhealthy
 
 ---
 
@@ -726,12 +730,12 @@ src
 
 ### Elements That Scale with Request Volume
  
-* **Cloud Run:** Auto-scale 5-50 instances (trigger: CPU > 70% or request concurrency > 80)
-* **Cloud SQL:** Vertical scaling (Standard → Premium tier); read replicas for read-heavy workloads
-* **Pub/Sub:** Auto-scales throughput; subscriber concurrency auto-adjusts (max 1000 concurrent pulls per subscription)
-* **Background Workers (Cloud Tasks):** Auto-scale job processing threads based on queue depth
-* **Cloud Memorystore (Redis):** Vertical scaling (Basic → Standard → Premium); auto-failover in Standard+ tiers
-* **Cloud Storage:** Auto-scales (unlimited capacity, unlimited throughput)
+* Cloud Run: Auto-scale 5-50 instances (trigger: CPU > 70% or request concurrency > 80)
+* Cloud SQL: Vertical scaling; read replicas for read-heavy workloads
+* Pub/Sub: Auto-scales throughput; subscriber concurrency auto-adjusts (max 1000 concurrent pulls per subscription)
+* Background Workers (Cloud Tasks): Auto-scale job processing threads based on queue depth
+* Cloud Memorystore (Redis): Vertical scaling (Basic < Standard < Premium); auto-failover in Standard+ tiers
+* Cloud Storage: Auto-scales (unlimited capacity, unlimited throughput)
  
 ### Auto-Scaling Triggers
  
