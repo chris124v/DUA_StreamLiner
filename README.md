@@ -585,6 +585,7 @@ src
 - Encryption key management: Google Cloud KMS
 - Container registry: Google Artifact Registry 
 - Session cache: Google Cloud Memorystore (Redis)
+- Agent orchestration framework: LangGraph (LangChain) 0.2
 ---
 
 ## Security
@@ -596,12 +597,13 @@ src
 - Per-endpoint authorization enforced using permission claims from the JWT payload
  
 ### Transport
-- HTTPS required on all endpoints, TLS 1.3
-- Internal service-to-service communication via HTTPS with Google-managed certificates
+- All communication between backend services and GCP managed services (Cloud SQL, Storage, Pub/Sub) is secured via HTTPS/TLS 1.3 using Google-managed certificates
  
 ### Encryption at Rest
-- Database encrypted with AES-256 using Google Cloud KMS (Customer-Managed Encryption Keys)
-- Files in Google Cloud Storage encrypted with AES-256 by default
+- All data stored in Google Cloud SQL is encrypted at rest using AES-256 also in Google Cloud Storage everything is encrypted with AES-256 by default.
+- Encryption keys are managed through Google Cloud KMS (Customer-Managed Encryption Keys - CMEK).
+- Encryption is handled transparently by the cloud provider; no application-level encryption of the database is performed.
+
  
 ### Secrets
 - All secrets managed in Google Secret Manager; never stored in the repository or hardcoded as environment variables.
@@ -634,7 +636,7 @@ src
 ## Observability
  
 ### Logs
-* Format: Structured JSON with trace_id, request_id, user_id, timestamp, level, message
+* Format: Structured JSON with trace_id, request_id, user_id, user_role, timestamp, level, message, service, enviroment, version, endpoint, method, statuscode
 * Destination: Google Cloud Logging (same as frontend)
 * Correlation: X-Trace-ID header propagated across all requests (unified with frontend logs)
  
