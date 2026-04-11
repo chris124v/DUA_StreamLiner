@@ -752,6 +752,226 @@ src
 
 ## Backend Key Workflows
 
+# DUA Processing Workflow (Backend-Oriented)
+
+## Step 0
+The user chooses whether they want to perform an export or import procedure (this is important to determine which template should be used and which fields will be mandatory).
+
+* The backend receives the operation type (import/export) and sets:
+- The corresponding DUA template
+- Required fields
+- Validation rules
+- Processing configuration
+
+---
+
+## Step 1
+There is a file called "current official DUA template" defined by the Ministerio de Hacienda and other "n" files (these may be Excel, Word, PDF, or images) located in a folder path (environment variable).
+
+* The backend loads:
+- The current DUA template from storage (GCS or internal DB)
+- All uploaded files from the configured folder path
+- Metadata associated with each file (name, type, size, hash)
+
+---
+
+## Step 2
+Separate the files into 4 categories: Image, Excel, Word, PDF.
+
+Additionally, before any embedding is performed, a thematic classification of the entire file is carried out.
+
+* The backend:
+- Detects file type based on MIME/extension
+- Sends each file to Vertex AI AutoML classification model
+- Receives a probability vector (0–1) for categories:
+  - Commercial invoice
+  - Transport document
+  - Certificate of origin
+  - Packing list
+  - Financial document
+  - Other
+
+- Selects the top 2 categories with highest probability
+- Stores:
+  - File type category (PDF, Word, etc.)
+  - Thematic category
+  - Confidence scores
+
+---
+
+## Step 3
+Check whether the version of the template used for the comparison hash is still the most updated one.
+
+* The backend:
+- Retrieves the official DUA template from Ministerio de Hacienda
+- Compares it against the stored template using hash/block comparison
+- If differences are detected → triggers Step 3.1 only for changed blocks
+
+---
+
+## Step 3.1
+Traverse the template using block division through embeddings and store the detected sections in a hash for later comparison.
+
+* The backend:
+- Splits the template into logical blocks (sections, tables, fields)
+- Generates embeddings for each block
+- Computes a hash per block
+
+- For changed blocks:
+  - Sends them to a neural network
+  - Receives structured metadata:
+    - Block hash
+    - Embedding
+    - Expected field type
+    - Validation rules
+    - Rendering type (text, table, code, conditional)
+
+- Updates only modified blocks in the system
+
+---
+
+## Step 4
+Word files are traversed using block division and embeddings.
+
+* The backend:
+- Parses Word structure (paragraphs, tables, sections)
+- Splits content into blocks
+- Generates embeddings per block
+
+- Indexes blocks in a vector store grouped by:
+  - Thematic category
+  - File type
+
+- This acts as an inverted index:
+  - Example: Searching "country of origin" → only checks "certificate of origin" documents
+
+---
+
+## Step 5
+The same process is performed for Excel and PDF files, considering their structural particularities.
+
+* The backend:
+- Excel:
+  - Reads sheets, tables, and cells
+  - Detects structured regions
+  - Converts into semantic blocks
+- PDF:
+  - Extracts text streams
+  - Detects layout blocks and tables
+  - Preserves positional structure
+
+- Generates embeddings and indexes blocks in the vector store
+
+---
+
+## Step 6
+The same process is performed for images using advanced OCR.
+
+* The backend:
+- Uses OCR (e.g., Vertex AI Vision / Document AI)
+- Extracts:
+  - Text
+  - Layout structure
+  - Bounding boxes
+
+- Converts detected regions into blocks
+- Generates embeddings
+- Indexes them in the vector store
+
+---
+
+## Step 7
+Through AI models trained to understand customs terminology, the system identifies and classifies key fields.
+
+* The backend:
+- Sends each block to an NLP  (Natural Language Processing) model specialized in customs
+- Extracts structured fields:
+  - Importer/exporter data
+  - Supplier info
+  - Goods description
+  - Quantities, weights, FOB/CIF values
+  - Incoterms
+  - Transport info
+  - Invoice number/date
+  - Country of origin
+  - Customs regime
+
+- Performs syntactic validation:
+  - Country codes validation
+  - Date format validation
+  - Numeric consistency checks
+
+- Stores normalized structured data
+
+---
+
+## Step 8
+The 2 texts with the highest similarity percentage are selected.
+
+* The backend:
+- Performs similarity search using embeddings
+- Applies filtering using:
+  - One-hot encoding of document category
+
+- Selects top 2 candidate blocks
+- Sends them to an AI API
+
+- Receives:
+  - Target DUA section mapping
+  - Confidence score
+
+### Warning Scale
+- x ≤ 30% → Red warning
+- 30% < x ≤ 70% → Yellow warning
+- x > 70% → Green warning
+
+---
+
+## Step 9
+Structured generation of the DUA document.
+
+* The backend:
+- Determines field requirements:
+  - Text
+  - Codes
+  - Dynamic tables
+  - Images
+
+- Applies:
+  - Formatting rules (dates, units)
+  - Rule engine (dependencies between fields)
+
+- Generates the final DUA:
+  - Preserving original layout
+  - Filling fields automatically
+  - Applying color indicators based on confidence
+
+---
+
+## Step 10
+Reprocessing control and cost optimization.
+
+* The backend:
+- Stores for each block:
+  - Block hash
+  - Embedding
+
+- When a new file is uploaded:
+  - Calculates block hash
+  - Compares with existing hashes
+
+- If block already exists:
+  - Reuses embedding
+  - Skips processing
+
+- If block is new:
+  - Processes normally through pipeline
+
+- This reduces:
+  - Processing time
+  - API costs
+  - Redundant computations
+
 ---
 
 ## Architecture Diagram in Layers
