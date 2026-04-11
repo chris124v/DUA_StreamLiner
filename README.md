@@ -752,9 +752,7 @@ src
 
 ## Backend Key Workflows
 
-# DUA Processing Workflow (Backend-Oriented)
-
-## Step 0
+### Step 0
 The user chooses whether they want to perform an export or import procedure (this is important to determine which template should be used and which fields will be mandatory).
 
 * The backend receives the operation type (import/export) and sets:
@@ -765,7 +763,7 @@ The user chooses whether they want to perform an export or import procedure (thi
 
 ---
 
-## Step 1
+### Step 1
 There is a file called "current official DUA template" defined by the Ministerio de Hacienda and other "n" files (these may be Excel, Word, PDF, or images) located in a folder path (environment variable).
 
 * The backend loads:
@@ -775,7 +773,7 @@ There is a file called "current official DUA template" defined by the Ministerio
 
 ---
 
-## Step 2
+### Step 2
 Separate the files into 4 categories: Image, Excel, Word, PDF.
 
 Additionally, before any embedding is performed, a thematic classification of the entire file is carried out.
@@ -799,7 +797,7 @@ Additionally, before any embedding is performed, a thematic classification of th
 
 ---
 
-## Step 3
+### Step 3
 Check whether the version of the template used for the comparison hash is still the most updated one.
 
 * The backend:
@@ -809,7 +807,7 @@ Check whether the version of the template used for the comparison hash is still 
 
 ---
 
-## Step 3.1
+### Step 3.1
 Traverse the template using block division through embeddings and store the detected sections in a hash for later comparison.
 
 * The backend:
@@ -830,7 +828,7 @@ Traverse the template using block division through embeddings and store the dete
 
 ---
 
-## Step 4
+### Step 4
 Word files are traversed using block division and embeddings.
 
 * The backend:
@@ -847,7 +845,7 @@ Word files are traversed using block division and embeddings.
 
 ---
 
-## Step 5
+### Step 5
 The same process is performed for Excel and PDF files, considering their structural particularities.
 
 * The backend:
@@ -864,7 +862,7 @@ The same process is performed for Excel and PDF files, considering their structu
 
 ---
 
-## Step 6
+### Step 6
 The same process is performed for images using advanced OCR.
 
 * The backend:
@@ -880,7 +878,7 @@ The same process is performed for images using advanced OCR.
 
 ---
 
-## Step 7
+### Step 7
 Through AI models trained to understand customs terminology, the system identifies and classifies key fields.
 
 * The backend:
@@ -905,7 +903,7 @@ Through AI models trained to understand customs terminology, the system identifi
 
 ---
 
-## Step 8
+### Step 8
 The 2 texts with the highest similarity percentage are selected.
 
 * The backend:
@@ -920,14 +918,14 @@ The 2 texts with the highest similarity percentage are selected.
   - Target DUA section mapping
   - Confidence score
 
-### Warning Scale
+* Warning Scale
 - x ≤ 30% → Red warning
 - 30% < x ≤ 70% → Yellow warning
 - x > 70% → Green warning
 
 ---
 
-## Step 9
+### Step 9
 Structured generation of the DUA document.
 
 * The backend:
@@ -948,7 +946,7 @@ Structured generation of the DUA document.
 
 ---
 
-## Step 10
+### Step 10
 Reprocessing control and cost optimization.
 
 * The backend:
@@ -971,6 +969,7 @@ Reprocessing control and cost optimization.
   - Processing time
   - API costs
   - Redundant computations
+
 
 ---
 
