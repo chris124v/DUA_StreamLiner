@@ -767,7 +767,7 @@ The user chooses whether they want to perform an export or import procedure (thi
 There is a file called "current official DUA template" defined by the Ministerio de Hacienda and other "n" files (these may be Excel, Word, PDF, or images) located in a folder path (environment variable).
 
 * The backend loads:
-- The current DUA template from storage (GCS or internal DB)
+- The current DUA template from storage (GCS)
 - All uploaded files from the configured folder path
 - Metadata associated with each file (name, type, size, hash)
 
