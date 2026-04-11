@@ -975,11 +975,11 @@ Reprocessing control and cost optimization.
 
 ## Architecture Diagram in Layers
 ### Context Diagram
-[/context_diagram.png](https://github.com/chris124v/DUA_StreamLiner/blob/main/context_diagram.png)
+![context_diagram.png](https://github.com/chris124v/DUA_StreamLiner/blob/main/context_diagram.png)
 ### Container Diagram
-[/container_diagram.png](https://github.com/chris124v/DUA_StreamLiner/blob/main/container_diagram.png)
+![container_diagram.png](https://github.com/chris124v/DUA_StreamLiner/blob/main/container_diagram.png)
 ### Code Diagram
-[/code_diagram.png](https://github.com/chris124v/DUA_StreamLiner/blob/main/code_diagram.png)
+![code_diagram.png](https://github.com/chris124v/DUA_StreamLiner/blob/main/code_diagram.png)
 
 
 ---
