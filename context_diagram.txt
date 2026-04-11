@@ -1,0 +1,23 @@
+@startuml C4_Context
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+Person(user, "User", "Customs operator or system user")
+
+System(system, "DUA Processing System", "Processes documents and generates DUA automatically")
+
+System_Ext(min_hacienda, "Ministerio de Hacienda", "Provides official DUA template")
+System_Ext(vertex_ai, "Vertex AI AutoML", "Classifies documents and generates embeddings")
+System_Ext(ocr_service, "OCR Service", "Extracts text from images")
+System_Ext(ai_api, "AI API", "Maps extracted data to DUA sections")
+System_Ext(gcs, "Google Cloud Storage", "Stores uploaded files")
+
+Rel(user, system, "Uploads documents or requests DUA generation")
+Rel(system, user, "Returns completed DUA ")
+
+Rel(system, gcs, "Stores and retrieves files")
+Rel(system, min_hacienda, "Fetches official DUA template")
+Rel(system, vertex_ai, "Classifies documents / embeddings")
+Rel(system, ocr_service, "Extracts text from images")
+Rel(system, ai_api, "Determines DUA mapping and confidence")
+
+@enduml

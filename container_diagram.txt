@@ -1,0 +1,60 @@
+@startuml
+' C4 library (más estable)
+!includeurl https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+Person(user, "User", "Customs operator")
+
+System_Ext(min_hacienda, "Ministerio de Hacienda", "Provides official DUA template")
+System_Ext(vertex_ai, "Vertex AI AutoML", "Document classification & embeddings")
+System_Ext(ocr_service, "OCR Service", "Text extraction from images")
+System_Ext(ai_api, "AI API", "DUA mapping & confidence scoring")
+
+System_Boundary(system, "DUA Processing System") {
+
+    Container(static_content, "Static Content", "HTML, JS, CSS", "Served to the browser")
+
+    Container(ui, "Frontend UI", "Web App", "Allows users to upload documents and view generated DUA")
+
+    Container(api, "Backend API", "REST API", "Handles requests and orchestrates workflow")
+
+    Container(processor, "Document Processor", "Worker", "Processes files, OCR, embeddings and extraction")
+
+    Container(vector_db, "Vector Store", "Vector DB", "Stores embeddings and performs similarity search")
+
+    Container(database, "Database", "PostgreSQL", "Stores metadata, hashes and results")
+
+    Container(storage, "File Storage", "GCS", "Stores uploaded files")
+    
+    Container(rule_engine, "Rule Engine", "Service", "Applies validations and business rules")
+
+    Container(generator, "DUA Generator", "Service", "Generates final DUA document")
+}
+
+Rel(user, static_content, "Loads UI")
+Rel(user, ui, "Uses")
+
+Rel(ui, api, "API calls (HTTPS)")
+
+Rel(api, storage, "Stores files")
+Rel(api, database, "Stores metadata")
+
+Rel(api, processor, "Triggers processing")
+
+Rel(processor, storage, "Reads files")
+Rel(processor, vector_db, "Stores embeddings")
+Rel(processor, database, "Stores extracted data")
+
+Rel(processor, vertex_ai, "Classification")
+Rel(processor, ocr_service, "OCR")
+Rel(processor, ai_api, "Mapping")
+
+Rel(api, min_hacienda, "Fetch template")
+
+Rel(processor, rule_engine, "Validates data")
+Rel(rule_engine, generator, "Sends validated data")
+
+Rel(generator, database, "Stores DUA")
+Rel(api, generator, "Requests DUA")
+Rel(api, ui, "Returns completed DUA")
+
+@enduml

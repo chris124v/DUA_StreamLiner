@@ -974,6 +974,13 @@ Reprocessing control and cost optimization.
 ---
 
 ## Architecture Diagram in Layers
+### Context Diagram
+/context_diagrama.png
+### Context Diagram
+/container_diagram.png
+### Code Diagram
+/code_diagram.png
+
 
 ---
 
