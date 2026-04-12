@@ -10,65 +10,61 @@ System_Ext(ai_api, "AI API")
 
 System_Boundary(system, "DUA Processing System") {
 
-    ' ===== PRESENTATION =====
-    Container(ui, "Frontend", "Web App", "User interface")
+    Container(ui, "Frontend", "Web App", "Upload docs and view DUA")
 
-    ' ===== APPLICATION LAYER =====
-    System_Boundary(app_layer, "Application Layer") {
+    Container(api, "API", "REST API", "Entry point")
 
-        Container(api, "Backend API", "REST API", "Orchestrates workflow")
+    Container(contracts, "Contracts", "DTOs / Interfaces", "Shared schemas")
 
-        Container(dua_generation, "DUA Generation Service", "Service", "Coordinates DUA creation")
+    Container(acl, "Anti-Corruption Layer", "Adapters", "Translates external services")
 
+    Container(storage, "Storage", "GCS", "Stores files")
+    Container(db, "Database", "PostgreSQL", "Stores metadata")
+    Container(vector_db, "Vector DB", "Vector Store", "Stores embeddings")
+
+    ' ===== BACKEND LAYERS =====
+    Container_Boundary(backend, "Backend Core") {
+
+        Container(model, "Model", "Domain", "Core business entities")
+
+        Container(controller, "Controllers", "Layer", "Handle requests")
+
+        Container(services, "Services", "Layer", "Business logic")
+
+        Container(repositories, "Repositories", "Layer", "Data access")
     }
-
-    ' ===== DOMAIN LAYER =====
-    System_Boundary(domain_layer, "Domain Layer") {
-
-        Container(doc_processing, "Document Processing", "Service", "Parsing, extraction, embeddings")
-
-        Container(template_mgmt, "Template Management", "Service", "Template versioning and structure")
-
-        Container(mapping_domain, "DUA Mapping Domain", "Service", "Business rules for mapping")
-
-    }
-
-    ' ===== INFRASTRUCTURE =====
-    System_Boundary(infra_layer, "Infrastructure Layer") {
-
-        Container(storage, "File Storage", "GCS", "Stores files")
-
-        Container(db, "Database", "PostgreSQL", "Stores metadata")
-
-        Container(vector_db, "Vector Store", "Vector DB", "Embeddings")
-
-    }
-
 }
 
-' ===== RELATIONS =====
+' ===== USER FLOW =====
 Rel(user, ui, "Uses")
-
 Rel(ui, api, "HTTPS")
 
-Rel(api, dua_generation, "Triggers")
+' ===== CONTRACT FLOW (CLAVE) =====
+Rel(api, contracts, "Uses")
+Rel(acl, contracts, "Uses")
 
-Rel(dua_generation, doc_processing, "Process documents")
-Rel(dua_generation, template_mgmt, "Uses template")
-Rel(dua_generation, mapping_domain, "Maps data")
+Rel(contracts, controller, "DTOs")
 
-Rel(doc_processing, vector_db, "Stores embeddings")
-Rel(doc_processing, storage, "Reads files")
+' ===== BACKEND FLOW =====
+Rel(controller, services, "Calls")
+Rel(services, repositories, "Uses")
+Rel(repositories, db, "Reads/Writes")
+Rel(services, vector_db, "Embeddings")
 
-Rel(template_mgmt, min_hacienda, "Fetch template")
+Rel(services, storage, "Reads files")
 
-Rel(mapping_domain, ai_api, "AI mapping")
+Rel(services, model, "Uses domain")
 
-Rel(doc_processing, vertex_ai, "Classification")
-Rel(doc_processing, ocr_service, "OCR")
+' ===== ACL FLOW =====
+Rel(services, acl, "Calls external services")
 
-Rel(api, db, "Stores metadata")
+Rel(acl, vertex_ai, "Classification")
+Rel(acl, ocr_service, "OCR")
+Rel(acl, ai_api, "Mapping")
+Rel(acl, min_hacienda, "Template")
 
+' ===== RESPONSE =====
+Rel(controller, contracts, "Response DTOs")
 Rel(api, ui, "Returns DUA")
 
 @enduml
