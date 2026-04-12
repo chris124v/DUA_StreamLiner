@@ -990,6 +990,67 @@ src
 
 ## Source Code
 
+### Backend (Python/FastAPI - Domain-Driven Design)
+
+**API Layer - REST Endpoints**
+- [Auth Routes](src/backend/api/routers/auth_routes.py) - Authentication and login endpoints
+- [DUA Routes](src/backend/api/routers/dua_routes.py) - DUA generation and management endpoints
+- [Upload Routes](src/backend/api/routers/upload_routes.py) - Document upload endpoints
+- [Status Routes](src/backend/api/routers/status_routes.py) - Progress monitoring endpoints
+- [Health Routes](src/backend/api/routers/health_routes.py) - Health check endpoints
+
+**Domain Layer - Core Business Logic**
+- [User Aggregate](src/backend/domain/aggregates/user.py) - User aggregate root
+- [Document Aggregate](src/backend/domain/aggregates/document.py) - Document aggregate root with file management
+- [DUA Generation Aggregate](src/backend/domain/aggregates/dua_generation.py) - DUA generation workflow aggregate
+- [Domain Events](src/backend/domain/events/) - Events for document upload, OCR, classification, extraction
+- [Domain Services](src/backend/domain/services/) - Document processing, authentication, DUA generation services
+- [Value Objects](src/backend/domain/value_objects/) - DocumentType, Block, Embedding, TemplateMapping, OCRResult, CustomsField
+
+**Application Layer - Use Cases**
+- [Login Use Case](src/backend/application/use_cases/auth/login_use_case.py) - User authentication workflow
+- [Upload Documents Use Case](src/backend/application/use_cases/dua/upload_documents_use_case.py) - File upload handling
+- [Generate DUA Use Case](src/backend/application/use_cases/dua/generate_dua_use_case.py) - DUA generation orchestration
+- [Get Generation Status Use Case](src/backend/application/use_cases/dua/get_generation_status_use_case.py) - Progress monitoring
+
+**Infrastructure Layer - External Service Adapters**
+- [Vertex AI Adapter](src/backend/infrastructure/adapters/vertex_ai_adapter.py) - Embedding, classification, field extraction
+- [Auth0 Adapter](src/backend/infrastructure/adapters/auth0_adapter.py) - JWT validation
+- [Google Cloud Storage Adapter](src/backend/infrastructure/adapters/gcs_adapter.py) - Document storage
+- [Document AI Adapter](src/backend/infrastructure/adapters/document_ai_adapter.py) - OCR processing
+- [Cloud SQL Repository](src/backend/infrastructure/persistence/cloudsql/repositories/) - PostgreSQL persistence layer
+- [Cloud SQL Models](src/backend/infrastructure/persistence/cloudsql/models.py) - Database schema (User, Document, DUAGeneration, Block, etc.)
+- [Redis Cache Adapter](src/backend/infrastructure/adapters/redis_adapter.py) - Session caching
+- [Cloud Pub/Sub Adapter](src/backend/infrastructure/adapters/pubsub_adapter.py) - Async messaging
+
+**Ports (Integration Contracts)**
+- [Ports Directory](src/backend/application/ports/) - Abstract interfaces for all external services
+
+### Frontend (TypeScript/React - Atomic Design)
+
+**Components**
+- [Atoms](src/components/atoms/) - Basic UI elements (StatusBadge, etc.)
+- [Molecules](src/components/molecules/) - Composite components (LoginForm, etc.)
+- [Organisms](src/components/organisms/) - Complex sections (GeneratorPanel, etc.)
+- [Templates](src/components/templates/) - Layout templates (MainLayoutTemplate, etc.)
+- [Pages](src/components/pages/) - Full page components (DUAStreamlinerPage, etc.)
+
+**Security & State**
+- [Auth Session Guard](src/security/AuthSessionGuard.ts) - Route protection
+- [Session Manager](src/security/SessionManager.ts) - Session state management
+- [Session Invalidation Service](src/security/SessionInvalidationService.ts) - Session expiration handling
+- [Progress Event Bus](src/events/ProgressEventBus.ts) - Async event distribution
+
+**Services & Utilities**
+- [API Client](src/apiClients/ApiClient.ts) - Base HTTP client
+- [Document API Client](src/apiClients/DocumentApiClient.ts) - Document API integration
+- [DUA Field Mapper](src/utils/DUAFieldMapper.ts) - Data transformation to DUA format
+- [App Config Settings](src/settings/AppConfig.ts) - Configuration management
+
+**Configuration Files**
+- [Backend pyproject.toml](src/pyproject.toml) - Python dependencies
+- [Backend Dockerfile](src/Dockerfile) - Container configuration
+- [Environment Variables](src/.env.example) - Environment template
 
 
 ---
