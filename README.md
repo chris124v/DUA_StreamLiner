@@ -562,7 +562,7 @@ src
 - API type: REST API, HTTPS
 - API standard: OpenAPI 3.1
 - API gateway: Google Cloud API Gateway
-- Hosting: Google Cloud Run (monorepo, folder: duabusiness/)
+- Hosting: Google Cloud Run
 - Architecture: Monorepo with Domain-Driven Design (DDD)
 - Coding language: Python 3.12
 - Web framework: FastAPI 0.115
@@ -880,11 +880,11 @@ Implementation: [`src/backend/api/routers/logout_router.py`](src/backend/api/rou
 
 ## Architecture Diagram in Layers
 ### Context Diagram
-![context_diagram.png](https://github.com/chris124v/DUA_StreamLiner/blob/main/context_diagram.png)
+![context_diagram.png](Images/context_diagram.png)
 ### Container Diagram
-![container_diagram.png](https://github.com/chris124v/DUA_StreamLiner/blob/main/container_diagram.png)
+![container_diagram.png](Images/container_diagram.png)
 ### Code Diagram
-![code_diagram.png](https://github.com/chris124v/DUA_StreamLiner/blob/main/code_diagram.png)
+![code_diagram.png](Images/code_diagram.png)
 
 
 ---
