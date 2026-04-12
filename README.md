@@ -876,12 +876,121 @@ src
 
 
 ---
-## Design Considerations
 
+## Design Considerations
+### Algorithm Selection & Parameters
+#### Embedding Generation Algorithm
+- **Embedding Model**: Google's Universal Sentence Encoder v5 (via Vertex AI)
+- **Embedding Dimension**: 512 dimensions
+- **Chunking Strategy**: 
+  - Max chunk size: 512 tokens (~2,000 characters) (precise and fast)
+  - Overlap: 50 tokens for context preservation (overlapping to not lose context between chunks)
+- **Similarity Metric**: Cosine similarity (threshold > 0.7 for semantic relevance)
+
+#### Field Extraction Algorithm
+- **Algorithm Type**: Named Entity Recognition (NER) + Structured Extraction via LLM
+- **Model**: Google Vertex AI Gemini 1.5 Pro
+- **Extraction Fields**:
+  - Importer/Exporter Data (regex + entity extraction)
+  - Supplier Information (NER for organization names)
+  - Product Description (semantic similarity to HS codes)
+  - Quantity/Weight (numeric extraction + validation)
+  - Incoterms (pattern matching against INCOTERMS 2020 rules)
+  - Transport Info (modal detection: maritime/air/land)
+  - Invoice Details (date extraction with ISO 8601 validation)
+  - Country of Origin (ISO 3166-1 alpha-3 code matching)
+  - Customs Regime (Pattern matching to Costa Rican regimes)
+- **Temperature**: 0.2 (low randomness for deterministic extraction)
+- **Validation Logic**:
+  - Country codes: ISO 3166-1 alpha-3 validation
+  - Dates: ISO 8601 format validation (YYYY-MM-DD)
+  - Quantities: Positive numeric validation
+  - Currency codes: ISO 4217 validation
+
+#### Similarity Matching Algorithm
+- **Primary Algorithm**: Vector cosine similarity (embeddings)
+- **Secondary Filter**: One-hot encoding classification (document category pre-filtering)
+- **Ranking Method**: 
+  1. Compute cosine similarity between extracted block and template sections
+  2. Apply category filter (only compare within same document type)
+  3. Select top 2 candidates with highest similarity
+
+### Agent Prototypes Definition
+#### Document Classification Agent
+- **Purpose**: Categorize uploaded documents into predefined types
+- **Input**: Embedding of a block of the document + file metadata (name, type, size)
+- **Output**: Block category, confidence scores for each category
+- **Workflow**:
+  1. Detect file format (MIME type validation)
+  2. Send text to Vertex AI classification model
+  3. Return top-2 categories with confidence scores
+- **Error Handling**: If no category > 50% confidence, classify as "Other"
+
+#### OCR Processing Agent
+- **Purpose**: Extract text and structure from scanned images and PDFs
+- **Input**: Document file (PDF/image)
+- **Output**: Extracted text, detected tables, layout structure, bounding boxes
+- **Workflow**:
+  1. Send document to Vertex Ai Vision
+  2. Parse OCR response (text regions, confidence scores, tables)
+  3. Convert to structured blocks with positional metadata
+  4. Filter low-confidence regions 
+
+#### Similarity Matching Agent
+- **Purpose**: Match extracted blocks to DUA template sections
+- **Input**: Extracted field values + DUA template structure + document category
+- **Output**: DUA section mapping + confidence scores + alternative matches (top-2)
+- **Workflow**:
+  1. Search vector store using cosine similarity
+  2. Apply category filter (inverted index by document type)
+  3. Rank results by similarity score
+  4. Return top-2 candidates with confidence interpolation
+- **Confidence Mapping**:
+  - Cosine similarity > 0.85 → Green (automatic acceptance)
+  - 0.70-0.85 → Yellow (requires user confirmation)
+  - < 0.70 → Red (manual review required)
+
+#### Field Extraction Agent
+- **Purpose**: Extract key customs fields from document content
+- **Input**: Document text block + expected field types + block categories
+- **Output**: Extracted field values + confidence scores + validation status
+- **Workflow**:
+  1. Send text + field schema to Vertex AI Gemini
+  2. Extract structured fields using NER + LLM
+  3. Validate extracted values (format, range, allowed values)
+  4. Return confidence scores per field
+  5. Flag fields failing validation for manual review
+- **Supported Fields**: 
+  - Importer/Exporter data
+  - Supplier information
+  - Product description (with HS code suggestion)
+  - Quantities, weights, FOB/CIF values
+  - Incoterms
+  - Transport information
+  - Invoice number/date
+  - Country of origin
+  - Customs regime
+
+#### DUA Document Generation Agent
+- **Purpose**: Populate DUA fields directly in the web interface with validated values and visual confidence indicators
+- **Input**: Mapped field values + confidence scores + DUA template + document generation rules
+- **Output**: Web form with fields auto-filled and a color indicator (red, yellow, green) displayed next to each field based on confidence
+- **Workflow**:
+  1. Load DUA template structure in the web interface (form-based layout)
+  2. Apply rule engine (dependency validation between fields)
+  3. Format values (date conversion, unit normalization, code validation)
+  4. Populate each field in the UI with the corresponding value
+  5. Display a visual indicator next to each field based on confidence:
+     - Green: Confidence > 70%
+     - Yellow: Confidence 30–70%
+     - Red: Confidence < 30%
+  6. Highlight fields requiring user verification (yellow/red) to guide manual review
 
 ---
 
 ## Source Code
+
+
 
 ---
 
