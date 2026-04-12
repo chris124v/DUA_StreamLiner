@@ -14,18 +14,18 @@ System_Boundary(system, "DUA Processing System") {
 
     Container(api, "API", "REST API", "Entry point")
 
-    Container(contracts, "Contracts", "DTOs / Interfaces", "Shared schemas")
+    Container(contracts, "Contracts", "DTOs + Interfaces", "Defines all system contracts")
 
-    Container(acl, "Anti-Corruption Layer", "Adapters", "Translates external services")
+    Container(acl, "Anti-Corruption Layer", "Adapters", "Implements translation using contracts")
 
     Container(storage, "Storage", "GCS", "Stores files")
     Container(db, "Database", "PostgreSQL", "Stores metadata")
     Container(vector_db, "Vector DB", "Vector Store", "Stores embeddings")
 
-    ' ===== BACKEND LAYERS =====
+    ' ===== BACKEND CORE =====
     Container_Boundary(backend, "Backend Core") {
 
-        Container(model, "Model", "Domain", "Core business entities")
+        Container(model, "Model", "Domain", "Business entities")
 
         Container(controller, "Controllers", "Layer", "Handle requests")
 
@@ -39,32 +39,36 @@ System_Boundary(system, "DUA Processing System") {
 Rel(user, ui, "Uses")
 Rel(ui, api, "HTTPS")
 
-' ===== CONTRACT FLOW (CLAVE) =====
-Rel(api, contracts, "Uses")
-Rel(acl, contracts, "Uses")
+' ===== API ↔ CONTRACTS =====
+Rel(api, contracts, "Uses DTOs")
 
-Rel(contracts, controller, "DTOs")
+' ===== CONTROLLER VIA CONTRACTS =====
+Rel(controller, contracts, "Uses request/response DTOs")
+Rel(contracts, services, "Service interfaces (ports)")
 
-' ===== BACKEND FLOW =====
-Rel(controller, services, "Calls")
+' ===== SERVICES =====
 Rel(services, repositories, "Uses")
 Rel(repositories, db, "Reads/Writes")
-Rel(services, vector_db, "Embeddings")
 
+Rel(services, vector_db, "Embeddings")
 Rel(services, storage, "Reads files")
 
 Rel(services, model, "Uses domain")
 
-' ===== ACL FLOW =====
-Rel(services, acl, "Calls external services")
+' ===== ACL (SOLO CONTRACTS) =====
+Rel(services, contracts, "Uses external service contracts")
+Rel(contracts, acl, "Implements adapters")
 
-Rel(acl, vertex_ai, "Classification")
-Rel(acl, ocr_service, "OCR")
-Rel(acl, ai_api, "Mapping")
-Rel(acl, min_hacienda, "Template")
+' ❗ ACL no conecta directamente con externos aquí
+
+' ===== EXTERNAL SYSTEMS (HIGH LEVEL) =====
+Rel(system, vertex_ai, "Uses")
+Rel(system, ocr_service, "Uses")
+Rel(system, ai_api, "Uses")
+Rel(system, min_hacienda, "Uses")
 
 ' ===== RESPONSE =====
-Rel(controller, contracts, "Response DTOs")
+Rel(services, contracts, "Returns DTOs")
 Rel(api, ui, "Returns DUA")
 
 @enduml
