@@ -1005,16 +1005,16 @@ Implementation: [`src/backend/api/routers/logout_router.py`](src/backend/api/rou
 ### Backend (Python/FastAPI - Domain-Driven Design)
 
 **API Layer - REST Endpoints**
-- [Auth Routes](src/backend/api/routers/auth_routes.py) - Authentication and login endpoints
-- [DUA Routes](src/backend/api/routers/dua_routes.py) - DUA generation and management endpoints
-- [Upload Routes](src/backend/api/routers/upload_routes.py) - Document upload endpoints
-- [Status Routes](src/backend/api/routers/status_routes.py) - Progress monitoring endpoints
-- [Health Routes](src/backend/api/routers/health_routes.py) - Health check endpoints
+- [Auth Routes](src/backend/api/routers/auth_router.py) - Authentication and login endpoints
+- [DUA Routes](src/backend/api/routers/dua_router.py) - DUA generation and management endpoints
+- [Upload Routes](src/backend/api/routers/upload_router.py) - Document upload endpoints
+- [Status Routes](src/backend/api/routers/status_router.py) - Progress monitoring endpoints
+- [Health Routes](src/backend/api/routers/health_router.py) - Health check endpoints
 
 **Domain Layer - Core Business Logic**
-- [User Aggregate](src/backend/domain/aggregates/user.py) - User aggregate root
-- [Document Aggregate](src/backend/domain/aggregates/document.py) - Document aggregate root with file management
-- [DUA Generation Aggregate](src/backend/domain/aggregates/dua_generation.py) - DUA generation workflow aggregate
+- [User Entity](src/backend/domain/entities/user.py) - User aggregate root
+- [Document Entity](src/backend/domain/entities/document.py) - Document aggregate root with file management
+- [DUA Generation Entity](src/backend/domain/entities/dua_generation.py) - DUA generation workflow aggregate
 - [Domain Events](src/backend/domain/events/) - Events for document upload, OCR, classification, extraction
 - [Domain Services](src/backend/domain/services/) - Document processing, authentication, DUA generation services
 - [Value Objects](src/backend/domain/value_objects/) - DocumentType, Block, Embedding, TemplateMapping, OCRResult, CustomsField
@@ -1022,18 +1022,18 @@ Implementation: [`src/backend/api/routers/logout_router.py`](src/backend/api/rou
 **Application Layer - Use Cases**
 - [Login Use Case](src/backend/application/use_cases/auth/login_use_case.py) - User authentication workflow
 - [Upload Documents Use Case](src/backend/application/use_cases/dua/upload_documents_use_case.py) - File upload handling
-- [Generate DUA Use Case](src/backend/application/use_cases/dua/generate_dua_use_case.py) - DUA generation orchestration
-- [Get Generation Status Use Case](src/backend/application/use_cases/dua/get_generation_status_use_case.py) - Progress monitoring
+- [Create DUA Use Case](src/backend/application/use_cases/dua/create_dua_use_case.py) - DUA generation orchestration
+- [Get Status Use Case](src/backend/application/use_cases/dua/get_status_use_case.py) - Progress monitoring
 
 **Infrastructure Layer - External Service Adapters**
-- [Vertex AI Adapter](src/backend/infrastructure/adapters/vertex_ai_adapter.py) - Embedding, classification, field extraction
-- [Auth0 Adapter](src/backend/infrastructure/adapters/auth0_adapter.py) - JWT validation
-- [Google Cloud Storage Adapter](src/backend/infrastructure/adapters/gcs_adapter.py) - Document storage
-- [Document AI Adapter](src/backend/infrastructure/adapters/document_ai_adapter.py) - OCR processing
-- [Cloud SQL Repository](src/backend/infrastructure/persistence/cloudsql/repositories/) - PostgreSQL persistence layer
+- [Vertex AI Adapter](src/backend/infrastructure/ai/vertex_ai_adapter.py) - Embedding, classification, field extraction
+- [Auth0 Adapter](src/backend/infrastructure/auth/auth0_adapter.py) - JWT validation
+- [Google Cloud Storage Adapter](src/backend/infrastructure/storage/gcs_storage_adapter.py) - Document storage
+- [Document AI Adapter](src/backend/infrastructure/ocr/document_ai_adapter.py) - OCR processing
+- [Cloud SQL Repository](src/backend/infrastructure/persistence/cloudsql/repositories.py) - PostgreSQL persistence layer
 - [Cloud SQL Models](src/backend/infrastructure/persistence/cloudsql/models.py) - Database schema (User, Document, DUAGeneration, Block, etc.)
-- [Redis Cache Adapter](src/backend/infrastructure/adapters/redis_adapter.py) - Session caching
-- [Cloud Pub/Sub Adapter](src/backend/infrastructure/adapters/pubsub_adapter.py) - Async messaging
+- [Redis Cache Adapter](src/backend/infrastructure/persistence/redis/redis_cache_adapter.py) - Session caching
+- [Cloud Pub/Sub Adapter](src/backend/infrastructure/messaging/pubsub_adapter.py) - Async messaging
 
 **Ports (Integration Contracts)**
 - [Ports Directory](src/backend/application/ports/) - Abstract interfaces for all external services
