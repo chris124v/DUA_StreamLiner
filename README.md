@@ -11,48 +11,35 @@ Project 1 Software Design.
 
 ---
 ## Workflow
+* Step 0. The user chooses whether they want to perform an export or import procedure (this is important to determine which template should be used and which fields will be mandatory).
 
-* **Step 0.** The user chooses whether they want to perform an export or import procedure (this is important to determine which template should be used and which fields will be mandatory).
-  - Implementation: [`src/backend/api/routers/dua_router.py`](src/backend/api/routers/dua_router.py)
+* Step 1. There is a file called "current official DUA template" defined by the Ministerio de Hacienda and other "n" files (these may be Excel, Word, PDF, or images) located in a folder path (environment variable).
 
-* **Step 1.** There is a file called "current official DUA template" defined by the Ministerio de Hacienda and other "n" files (these may be Excel, Word, PDF, or images) located in a folder path (environment variable).
-  - Implementation: [`src/backend/infrastructure/storage/gcs_storage_adapter.py`](src/backend/infrastructure/storage/gcs_storage_adapter.py)
+* Step 2. Separate the files into 4 categories: Image, Excel, Word, PDF. Additionally, before any embedding is performed, a thematic classification of the entire file is carried out, for example: Commercial invoice, Transport document, Certificate of origin, Packing list, Financial document, Other. This will allow restricting later searches by document type and avoid unnecessary exhaustive comparisons.
 
-* **Step 2.** Separate the files into 4 categories: Image, Excel, Word, PDF. Additionally, before any embedding is performed, a thematic classification of the entire file is carried out, for example: Commercial invoice, Transport document, Certificate of origin, Packing list, Financial document, Other. This will allow restricting later searches by document type and avoid unnecessary exhaustive comparisons.
-  - Implementation: [`src/backend/domain/services/document_processing_service.py`](src/backend/domain/services/document_processing_service.py) | [`src/backend/infrastructure/ai/vertex_ai_adapter.py`](src/backend/infrastructure/ai/vertex_ai_adapter.py) | Value Object: [`document_type.py`](src/backend/domain/value_objects/document_type.py)
+* Step 3. Check whether the version of the template used for the comparison hash is still the most updated one. If not, perform step 3.1.
 
-* **Step 3.** Check whether the version of the template used for the comparison hash is still the most updated one. If not, perform step 3.1.
-  - Implementation: [`src/backend/domain/services/document_processing_service.py`](src/backend/domain/services/document_processing_service.py)
+* Step 3.1. Traverse the template using block division through embeddings and store the detected sections in a hash for later comparison. Each block will contain: block hash, embedding, expected field type, validation rules, rendering type (text, table, code, conditional).
 
-* **Step 3.1.** Traverse the template using block division through embeddings and store the detected sections in a hash for later comparison. Each block will contain: block hash, embedding, expected field type, validation rules, rendering type (text, table, code, conditional).
-  - Implementation: [`src/backend/infrastructure/ai/vertex_ai_adapter.py`](src/backend/infrastructure/ai/vertex_ai_adapter.py) | Storage: [`src/backend/infrastructure/persistence/cloudsql/models.py`](src/backend/infrastructure/persistence/cloudsql/models.py) (Block table)
+* Step 4. Word files are traversed using block division and embeddings. Before comparing against the entire template: the blocks are indexed in a vector store–like structure by document category. In this way it works like an inverted index. For example, if you need country of origin, you know you must search in the certificate of origin.
 
-* **Step 4.** Word files are traversed using block division and embeddings. Before comparing against the entire template: the blocks are indexed in a vector store–like structure by document category. In this way it works like an inverted index. For example, if you need country of origin, you know you must search in the certificate of origin.
-  - Implementation: [`src/backend/domain/services/document_processing_service.py`](src/backend/domain/services/document_processing_service.py) | [`src/backend/infrastructure/ai/vertex_ai_adapter.py`](src/backend/infrastructure/ai/vertex_ai_adapter.py)
+* Step 5. The same process is performed for Excel and PDF files, considering their structural particularities.
 
-* **Step 5.** The same process is performed for Excel and PDF files, considering their structural particularities.
-  - Implementation: [`src/backend/domain/services/document_processing_service.py`](src/backend/domain/services/document_processing_service.py)
+* Step 6. The same process is performed for images using advanced OCR.
 
-* **Step 6.** The same process is performed for images using advanced OCR.
-  - Implementation: [`src/backend/infrastructure/ocr/document_ai_adapter.py`](src/backend/infrastructure/ocr/document_ai_adapter.py) | Output: [`ocr_result.py`](src/backend/domain/value_objects/ocr_result.py)
+* Step 7. Through AI models trained to understand customs terminology, the system will identify and automatically classify within each block the following key fields: Importer/exporter data, Supplier information, Commercial and tariff description of goods, Quantities, weights and FOB/CIF values, Incoterms, Transport information, Invoice number and date, Country of origin and provenance, Applicable customs regime. Once the field is extracted, a syntactic validation is performed ensuring the country is valid, the date is valid, etc.
 
-* **Step 7.** Through AI models trained to understand customs terminology, the system will identify and automatically classify within each block the following key fields: Importer/exporter data, Supplier information, Commercial and tariff description of goods, Quantities, weights and FOB/CIF values, Incoterms, Transport information, Invoice number and date, Country of origin and provenance, Applicable customs regime. Once the field is extracted, a syntactic validation is performed ensuring the country is valid, the date is valid, etc.
-  - Implementation: [`src/backend/infrastructure/ai/vertex_ai_adapter.py`](src/backend/infrastructure/ai/vertex_ai_adapter.py) (Gemini 1.5 Pro) | Extracted Fields: [`customs_fields.py`](src/backend/domain/value_objects/customs_fields.py) | Validation: [`src/backend/infrastructure/persistence/cloudsql/models.py`](src/backend/infrastructure/persistence/cloudsql/models.py)
-
-* **Step 8.** The 2 texts with the highest similarity percentage are selected, taking into account the document category through one-hot encoding classification. These will be sent to an AI API to determine: Which specific part of the DUA will be filled with that block. Confidence percentage.
-  - Implementation: [`src/backend/domain/services/dua_service.py`](src/backend/domain/services/dua_service.py) | Mapping Result: [`template_mapping.py`](src/backend/domain/value_objects/template_mapping.py) | Confidence: [`confidence.py`](src/backend/domain/value_objects/confidence.py)
+* Step 8. The 2 texts with the highest similarity percentage are selected, taking into account the document category through one-hot encoding classification. These will be sent to an AI API to determine: Which specific part of the DUA will be filled with that block. Confidence percentage.
 
 ##### Warning scale
 
-- x ≤ 30% → Red warning — Implementation: [`confidence.py`](src/backend/domain/value_objects/confidence.py)
+- x ≤ 30% → Red warning
 - 30% < x ≤ 70% → Yellow warning
 - x > 70% → Green warning
 
-* **Step 9.** It must be considered what type of field needs to be filled (text, if there is a required code, dynamic table), the format (date formats, unit conversion), a rule engine considering that if it has "x" it requires section "y", then perform the structured generation of the document respecting the original layout (it will have a color depending on the confidence).
-  - Implementation: [`src/backend/domain/services/dua_service.py`](src/backend/domain/services/dua_service.py) | Use Case: [`src/backend/application/use_cases/dua/create_dua_use_case.py`](src/backend/application/use_cases/dua/create_dua_use_case.py)
+* Step 9. It must be considered what type of field needs to be filled (text, if there is a required code, dynamic table), the format (date formats, unit conversion), a rule engine considering that if it has "x" it requires section "y", then perform the structured generation of the document respecting the original layout (it will have a color depending on the confidence).
 
-* **Step 10.** For reprocessing control and cost optimization, to avoid reprocessing everything when files are added or corrected, each block will store the block hash and embedding. When a file is added, the hash is calculated and compared with existing ones; if it already exists, the embedding is reused.
-  - Implementation: [`src/backend/domain/services/document_processing_service.py`](src/backend/domain/services/document_processing_service.py) | Hashing: [`src/backend/shared/utils.py`](src/backend/shared/utils.py) | Storage: [`src/backend/infrastructure/persistence/cloudsql/models.py`](src/backend/infrastructure/persistence/cloudsql/models.py)
+* Step 10. For reprocessing control and cost optimization, to avoid reprocessing everything when files are added or corrected, each block will store the block hash and embedding. When a file is added, the hash is calculated and compared with existing ones; if it already exists, the embedding is reused.
 
 ---
 
@@ -765,146 +752,117 @@ src
 ## Backend Key Workflows
 
 ### Login
-**Implementation:** [`src/backend/api/routers/auth_router.py`](src/backend/api/routers/auth_router.py) | [`src/backend/application/use_cases/auth/login_use_case.py`](src/backend/application/use_cases/auth/login_use_case.py) | [`src/backend/infrastructure/auth/auth0_adapter.py`](src/backend/infrastructure/auth/auth0_adapter.py)
-
 1. The user sends credentials from the frontend to the Auth0 service
 2. The frontend sends the JWT to the backend through a GET authorization (the JWT travels in the bearer); here Google Cloud API Gateway is responsible for validating that the endpoint exists and verifying the rate limit
 3. Google Cloud API routes the request to Cloud Run (where the backend is hosted)
-4. FastAPI validates the JWT with Auth0 (JWKS) — via [`auth0_jwt_verifier.py`](src/backend/infrastructure/auth/auth0_jwt_verifier.py)
-5. If validated, it performs a mapping to Domain-Driven Design (stores the user values in [User entity](src/backend/domain/entities/user.py))
+4. FastAPI validates the JWT with Auth0 (JWKS)
+5. If validated, it performs a mapping to Domain-Driven Design (stores the user values in a class)
 6. Executes the "Session Cache" workflow
 
 ### Session Cache
-**Implementation:** [`src/backend/infrastructure/persistence/redis/redis_cache_adapter.py`](src/backend/infrastructure/persistence/redis/redis_cache_adapter.py) | [`src/backend/infrastructure/persistence/redis/session_cache_repository.py`](src/backend/infrastructure/persistence/redis/session_cache_repository.py) | [`src/backend/infrastructure/persistence/cloudsql/repositories.py`](src/backend/infrastructure/persistence/cloudsql/repositories.py)
-
 1. It checks if Google Cloud Memorystore (Redis) contains the user; if it does then it returns the user with the response.
-2. It it doesnt: Reads the database via [UserRepository](src/backend/infrastructure/persistence/cloudsql/repositories.py) for the auth0_id then maps it to DDD (from [DB User model](src/backend/infrastructure/persistence/cloudsql/models.py) to [Domain User entity](src/backend/domain/entities/user.py)) and save it in Redis
+2. It it doesnt: Reads the database for the auth0_id then maps it to DDD (from DB user to Domain user) and save it in Redis
 
 ### Set up the generator
-**Implementation:** [`src/backend/api/routers/dua_router.py`](src/backend/api/routers/dua_router.py) | Domain: [`dua_generation.py`](src/backend/domain/entities/dua_generation.py)
-
 1. The backend receive an option between "Import" and "Export" process.
-2. The backend choose the type of dua template used based on the selection via [DUA Service](src/backend/domain/services/dua_service.py).
+2. The backend choose the type of dua template used based on the selection.
 3. The backend receive files and executes the "Upload files to generate dua" workflow
 
 ### Upload files to generate dua
-**Implementation:** [`src/backend/api/routers/upload_router.py`](src/backend/api/routers/upload_router.py) | [`src/backend/infrastructure/storage/gcs_storage_adapter.py`](src/backend/infrastructure/storage/gcs_storage_adapter.py) | [`src/backend/infrastructure/persistence/cloudsql/models.py`](src/backend/infrastructure/persistence/cloudsql/models.py)
-
-1. The backend receive the list of files to be uploaded via streaming in [`upload_router.py`](src/backend/api/routers/upload_router.py)
-2. Open a streaming transfer file by file to received the files content in raw format via [GCS Adapter](src/backend/infrastructure/storage/gcs_storage_adapter.py)
-3. All the files are store in Google Cloud Service and map in the database via [Document model](src/backend/infrastructure/persistence/cloudsql/models.py)
+1. The backend receive the list of files to be uploaded
+2. Open a streaming transfer file by file to received the files content in raw format
+3. All the files are store in Google Cloud Service and map in the database
 
 ### Comparison between files of the user (not an image).
-**Implementation:** [`src/backend/domain/services/document_processing_service.py`](src/backend/domain/services/document_processing_service.py) | [`src/backend/infrastructure/ai/vertex_ai_adapter.py`](src/backend/infrastructure/ai/vertex_ai_adapter.py)
-
-1. The backend loads all uploaded files from the configured folder path and already process files of the same user via [DocumentRepository](src/backend/infrastructure/persistence/cloudsql/repositories.py)
-2. The backend divides the new files in blocks and creates embeddings via [Vertex AI Adapter](src/backend/infrastructure/ai/vertex_ai_adapter.py) — see [`vertex_ai_client.py`](src/backend/infrastructure/ai/vertex_ai_client.py)
-3. The backend then calculate the hash and compared with existing ones; if it already exists, the embedding is reused via [Document Processing Service](src/backend/domain/services/document_processing_service.py)
+1. The backend loads all uploaded files from the configured folder path and already process files of the same user
+2. The backend divides the new files in blocks and creates embeddings.
+3. The backend then calculate the hash and compared with existing ones; if it already exists, the embedding is reused.
 4. if it doesnt exist it sends them to the workflow of thematic classification.
 
 ### Comparison between files of the user (image).
-**Implementation:** [`src/backend/infrastructure/ocr/document_ai_adapter.py`](src/backend/infrastructure/ocr/document_ai_adapter.py) | [`src/backend/domain/services/document_processing_service.py`](src/backend/domain/services/document_processing_service.py)
-
 1. The backend loads all uploaded files from the configured folder path and already process files of the same user
-2. The backend sends the image to "ocr" workflow via [`document_ai_adapter.py`](src/backend/infrastructure/ocr/document_ai_adapter.py) to extract text, layout structure, bounding boxes
-3. The backend divides the extracted information into blocks and creates embeddings via [Vertex AI Adapter](src/backend/infrastructure/ai/vertex_ai_adapter.py)
-4. The backend then calculate the hash and compared with existing ones via [Document Processing Service](src/backend/domain/services/document_processing_service.py); if it already exists, the embedding is reused.
-5. if it doesnt exist it sends them to the workflow of thematic classification.
+2. The backend sends the image to "ocr" workflow to extract text, layout structure, bounding boxes
+2. The backend divides the extracted information into blocks and creates embeddings.
+3. The backend then calculate the hash and compared with existing ones; if it already exists, the embedding is reused.
+4. if it doesnt exist it sends them to the workflow of thematic classification.
 
 ### Comparison between Dua Templates 
-**Implementation:** [`src/backend/infrastructure/storage/gcs_storage_adapter.py`](src/backend/infrastructure/storage/gcs_storage_adapter.py) | [`src/backend/domain/services/document_processing_service.py`](src/backend/domain/services/document_processing_service.py)
-
-1. The backend loads the dua template hash and embedding from the GCS via [GCS Storage Adapter](src/backend/infrastructure/storage/gcs_storage_adapter.py)
+1. The backend loads the dua template hash and embedding from the GCS.
 2. The backend loads the "updated" dua template.
-3. The backend divides the new files in blocks and creates embeddings via [Vertex AI](src/backend/infrastructure/ai/vertex_ai_adapter.py)
-4. The backend then calculate the hash and compared with existing ones; if it already exists, the embedding is reused via [Document Processing Service](src/backend/domain/services/document_processing_service.py)
-5. if it doesnt exist its send to the workflow of thematic classification.
+2. The backend divides the new files in blocks and creates embeddings.
+3. The backend then calculate the hash and compared with existing ones; if it already exists, the embedding is reused.
+4. if it doesnt exist its send to the workflow of thematic classification.
 
 ### Thematic classification.
-**Implementation:** [`src/backend/infrastructure/ai/vertex_ai_adapter.py`](src/backend/infrastructure/ai/vertex_ai_adapter.py) | Domain: [`dua_events.py`](src/backend/domain/events/dua_events.py) | Stored: [`src/backend/infrastructure/persistence/cloudsql/models.py`](src/backend/infrastructure/persistence/cloudsql/models.py)
-
-1. The backend sends the embeddings of blocks to Vertex Ai AutoML classification model via [`vertex_ai_adapter.py`](src/backend/infrastructure/ai/vertex_ai_adapter.py)
-2. it receivs a probability vector (0-1) for categories stored in value object [`document_type.py`](src/backend/domain/value_objects/document_type.py):
-   - Commercial invoice
-   - Transport document
-   - Certificate of origin
-   - Packing list
-   - Financial document
-   - Other
-3. Selects the top 2 categories with highest probability via [Vertex AI Adapter](src/backend/infrastructure/ai/vertex_ai_adapter.py)
-4. Stores via [Block model](src/backend/infrastructure/persistence/cloudsql/models.py): File type category, thematic categories, confidence scores (see [`confidence.py`](src/backend/domain/value_objects/confidence.py)), embedding, block, file usage (DUA template, User files), Expected field type, validation rules, rendering type.
-5. The blocks are indexed in a vector store group by thematic category, file type (creating an inverted index) via [Vector Store logic](src/backend/infrastructure/ai/vertex_ai_adapter.py)
+1. The backend sends the embeddings of blocks to Vertex Ai AutoML classification model
+2. it receivs a probability vector (0-1) for categories:
+- Commercial invoice
+- Transport document
+- Certificate of origin
+- Packing list
+- Financial document
+- Other
+3. Selects the top 2 categories with highest probability
+4. Stores: File type category, thematic categories, confidence scores, embedding, block, file usage (DUA template, User files), Expected field type (can be null, its used in DUA Templates), validation rules(can be null, its used in DUA Templates), rendering type(can be null, its used in DUA Templates).
+5. The blocks are indexed in a vector store group by thematic cateogry, file type (creating an inverted index).
 
 ### OCR.
-**Implementation:** [`src/backend/infrastructure/ocr/document_ai_adapter.py`](src/backend/infrastructure/ocr/document_ai_adapter.py) | [`src/backend/infrastructure/ocr/document_ai_client.py`](src/backend/infrastructure/ocr/document_ai_client.py) | Value Object: [`ocr_result.py`](src/backend/domain/value_objects/ocr_result.py)
-
-1. The backend uses Vertex AI Vision API via [`document_ai_adapter.py`](src/backend/infrastructure/ocr/document_ai_adapter.py)
-2. Extracts: Text, Layout structure, bounding boxes — returned in [`ocr_result.py`](src/backend/domain/value_objects/ocr_result.py) value object
-3. Return the extracted information as a json via [`document_ai_client.py`](src/backend/infrastructure/ocr/document_ai_client.py)
+1. The backend uses Vertex AI Vision API.
+2. Extracts: Text, Layout structure, bounding boxes.
+3. Return the extracted information as a json.
 
 ### Extracts structured fields from embeddings.
-**Implementation:** [`src/backend/infrastructure/ai/vertex_ai_adapter.py`](src/backend/infrastructure/ai/vertex_ai_adapter.py) | Domain: [`customs_fields.py`](src/backend/domain/value_objects/customs_fields.py) | Stored: [`src/backend/infrastructure/persistence/cloudsql/models.py`](src/backend/infrastructure/persistence/cloudsql/models.py)
-
-1. The backend sends each block to a NLP (Natural Language Processing) model specialized in customs via [`vertex_ai_adapter.py`](src/backend/infrastructure/ai/vertex_ai_adapter.py) (Gemini 1.5 Pro)
-2. It returns structured extraction via [`customs_fields.py`](src/backend/domain/value_objects/customs_fields.py):
-   - Importer/exporter data
-   - Supplier info
-   - Goods description
-   - Quantities, weights, FOB/CIF values
-   - Incoterms
-   - Transport info
-   - Invoice number/date
-   - Country of origin
-   - Customs regime
-   - syntactic validation: {Country codes validation, Date format validation, Numeric consistency checks}
-3. Its stored as normalized structured data associated with the vector database via [Block model](src/backend/infrastructure/persistence/cloudsql/models.py) and [`structured_fields_extracted` table](src/backend/infrastructure/persistence/cloudsql/models.py)
+1. The backend sends each block to a NLP (Natural Language Processing) model specialized in customs
+2. It returns: 
+- Importer/exporter data
+- Supplier info
+- Goods description
+- Quantities, weights, FOB/CIF values
+- Incoterms
+- Transport info
+- Invoice number/date
+- Country of origin
+- Customs regime
+- syntactic validation:{Country codes validation, Date format validation, Numeric consistency checks}
+3. Its stored as normalized structured data asociated with the vector database.
 4. Execute "Dua template mapping" workflow.
 
 ### Dua template mapping.
-**Implementation:** [`src/backend/domain/services/dua_service.py`](src/backend/domain/services/dua_service.py) | Value Object: [`template_mapping.py`](src/backend/domain/value_objects/template_mapping.py) | Confidence: [`confidence.py`](src/backend/domain/value_objects/confidence.py)
-
-1. the backend performs similarity search using embeddings via [`vertex_ai_adapter.py`](src/backend/infrastructure/ai/vertex_ai_adapter.py)
-2. Applies filtering using: One hot encoding of document categories via [DUA Service](src/backend/domain/services/dua_service.py)
-3. Selects top 2 candidate blocks via similarity ranking
-4. Sends them to an Ai API via [Vertex AI Adapter](src/backend/infrastructure/ai/vertex_ai_adapter.py)
-5. Receives: Target Dua section mapping (stored in [`template_mapping.py`](src/backend/domain/value_objects/template_mapping.py)), confidence score (via [`confidence.py`](src/backend/domain/value_objects/confidence.py))
-6. it gives a warning color based on threshold in [`confidence.py`](src/backend/domain/value_objects/confidence.py):
-   - x ≤ 30% → Red warning
-   - 30% < x ≤ 70% → Yellow warning
-   - x > 70% → Green warning
+1. the backend performs similarity search using embeddings
+2. Applies filtering using: One hot encoding of document categories
+3. Selects top 2 candidate blocks
+4. Sends them to an Ai API
+5. Receives: Target Dua section mapping, confidence score
+6. it gives a warning color based on:
+- x ≤ 30% → Red warning
+- 30% < x ≤ 70% → Yellow warning
+- x > 70% → Green warnin
 
 ### Dua structure generation.
-**Implementation:** [`src/backend/domain/services/dua_service.py`](src/backend/domain/services/dua_service.py) | Application: [`src/backend/application/use_cases/dua/create_dua_use_case.py`](src/backend/application/use_cases/dua/create_dua_use_case.py)
-
-1. The backend applies formating rules and determines field requirements (text, codes, dynamic tables, images) via [DUA Service](src/backend/domain/services/dua_service.py)
-2. Generates the final DUA: filling fields automatically and applying color indicators based on confidence (using [`confidence.py`](src/backend/domain/value_objects/confidence.py)) via [Create DUA Use Case](src/backend/application/use_cases/dua/create_dua_use_case.py)
+1. The backend applies formating rules and determines field requirements (text, codes, dynamic tables, images)
+2. Generates the final DUA: filling fields automatically and applying color indicatores based on confidence
 
 ### Progress monitoring.
-**Implementation:** [`src/backend/api/routers/status_router.py`](src/backend/api/routers/status_router.py) | Frontend: [`src/events/ProgressEventBus.ts`](src/events/ProgressEventBus.ts) | Domain Event: [`dua_events.py`](src/backend/domain/events/dua_events.py)
-
-1. The frontend initializes a polling mechanism using [`ProgressEventBus`](src/events/ProgressEventBus.ts) to subscribe to generation events.
-2. The user makes a request to the backend [`/dua/generation/{id}/status`](src/backend/api/routers/status_router.py) endpoint with the generation session ID via [`status_router.py`](src/backend/api/routers/status_router.py)
-3. The backend retrieves the current generation state for that process via [GenerationRepository](src/backend/infrastructure/persistence/cloudsql/repositories.py) which maintains a single source of truth via [`dua_generation.py`](src/backend/domain/entities/dua_generation.py) aggregate
-4. The backend returns the progress data via DDD mapping: current step (1-10), percentage completion (0-100), current task description, and status (PROCESSING, COMPLETED, FAILED) — stored in [`dua_generation` table](src/backend/infrastructure/persistence/cloudsql/models.py)
-5. The `NotificationHub` (see [`src/notifications/NotificationHub.ts`](src/notifications/NotificationHub.ts)) (Observer/Pub-Sub pattern) publishes progress events via domain events in [`dua_events.py`](src/backend/domain/events/dua_events.py) to all subscribed frontend components whenever state changes occur.
-6. The `ProgressEventBus` (see [`src/events/ProgressEventBus.ts`](src/events/ProgressEventBus.ts)) (Event Bus pattern) receives these events and distributes them to interested UI listeners without tight coupling.
-7. Upon completion, the backend publishes a `GENERATION_COMPLETE` event via [`dua_events.py`](src/backend/domain/events/dua_events.py) through `ProgressEventBus` which triggers:
+1. The frontend initializes a polling mechanism using `ProgressEventBus` to subscribe to generation events.
+2. The user makes a request to the backend `/dua/generation/{id}/status` endpoint with the generation session ID.
+3. The backend retrieves the current generation state for that process from `GenerationStoreRepository` which maintains a single source of truth for that process of DUA generation.
+4. The backend returns the progress data including: current step (1-10), percentage completion (0-100), current task description, and status (PROCESSING, COMPLETED, FAILED).
+5. The `NotificationHub` (Observer/Pub-Sub pattern) publishes progress events to all subscribed frontend components whenever state changes occur.
+6. The `ProgressEventBus` (Event Bus pattern) receives these events and distributes them to interested UI listeners without tight coupling.
+7. Upon completion, the backend publishes a GENERATION_COMPLETE event through `ProgressEventBus` which triggers:
     - NotificationHub sends a system-wide notification to inform the user
     - UIRefreshCoordinator updates the UI to transition from progress monitoring to results display
-8. If generation fails at any step, the backend publishes a `GENERATION_FAILED` event and stores error details via [GenerationStore/DUAGeneration](src/backend/infrastructure/persistence/cloudsql/models.py) with step number and error message for user review.
+8. If generation fails at any step, the backend publishes a GENERATION_FAILED event and stores error details in GenerationStore with step number and error message for user review.
+
 
 ### Results Obtained.
-**Implementation:** [`src/backend/api/routers/result_router.py`](src/backend/api/routers/result_router.py) | [`src/backend/application/use_cases/dua/get_result_use_case.py`](src/backend/application/use_cases/dua/get_result_use_case.py)
-
-1. The backend receive the changes requested on the document by the user and updates it via [`result_router.py`](src/backend/api/routers/result_router.py)
-2. The backend receive the confirmation that its the final version of the generated DUA document via [Get Result Use Case](src/backend/application/use_cases/dua/get_result_use_case.py)
-3. The backend sends the file for the user to download via [GCS Storage Adapter](src/backend/infrastructure/storage/gcs_storage_adapter.py)
+1. The backend receive the changes requested on the document by the user and updates it.
+2. The backend receive the confirmation that its the final version of the generated DUA document.
+3. The backend sends the file for the user to download.
 
 ### Logout.
-**Implementation:** [`src/backend/api/routers/logout_router.py`](src/backend/api/routers/logout_router.py) | [`src/backend/application/use_cases/auth/logout_use_case.py`](src/backend/application/use_cases/auth/logout_use_case.py)
-
-1. the backend receive a logout request via [`logout_router.py`](src/backend/api/routers/logout_router.py)
-2. the backend deletes the session cache in redis via [Redis Cache Adapter](src/backend/infrastructure/persistence/redis/redis_cache_adapter.py) in the [Logout Use Case](src/backend/application/use_cases/auth/logout_use_case.py)
+1. the backend receive a logout request
+2. the backend deletes the session cache in redis
 
 ---
 
