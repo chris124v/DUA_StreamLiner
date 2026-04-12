@@ -59,13 +59,11 @@ Rel(services, model, "Uses domain")
 Rel(services, contracts, "Uses external service contracts")
 Rel(contracts, acl, "Implements adapters")
 
-' ❗ ACL no conecta directamente con externos aquí
-
-' ===== EXTERNAL SYSTEMS (HIGH LEVEL) =====
-Rel(system, vertex_ai, "Uses")
-Rel(system, ocr_service, "Uses")
-Rel(system, ai_api, "Uses")
-Rel(system, min_hacienda, "Uses")
+' ===== EXTERNAL SYSTEMS (LLAMADOS DESDE SERVICES) =====
+Rel(services, vertex_ai, "Uses (via contracts)")
+Rel(services, ocr_service, "Uses (via contracts)")
+Rel(services, ai_api, "Uses (via contracts)")
+Rel(services, min_hacienda, "Uses (via contracts)")
 
 ' ===== RESPONSE =====
 Rel(services, contracts, "Returns DTOs")
