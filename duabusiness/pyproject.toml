@@ -1,0 +1,13 @@
+﻿[project]
+name = "dua-business"
+version = "0.1.0"
+description = "DUA StreamLiner backend skeleton"
+requires-python = ">=3.12"
+dependencies = [
+  "fastapi>=0.115.0",
+  "uvicorn>=0.30.0",
+  "pydantic>=2.7.0"
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
