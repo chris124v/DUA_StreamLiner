@@ -752,6 +752,8 @@ src
 ## Backend Key Workflows
 
 ### Login
+Implementation: [`src/backend/api/routers/auth_router.py`](src/backend/api/routers/auth_router.py)
+
 1. The user sends credentials from the frontend to the Auth0 service
 2. The frontend sends the JWT to the backend through a GET authorization (the JWT travels in the bearer); here Google Cloud API Gateway is responsible for validating that the endpoint exists and verifying the rate limit
 3. Google Cloud API routes the request to Cloud Run (where the backend is hosted)
@@ -769,6 +771,8 @@ src
 3. The backend receive files and executes the "Upload files to generate dua" workflow
 
 ### Upload files to generate dua
+Implementation: [`src/backend/api/routers/upload_router.py`](src/backend/api/routers/upload_router.py)
+
 1. The backend receive the list of files to be uploaded
 2. Open a streaming transfer file by file to received the files content in raw format
 3. All the files are store in Google Cloud Service and map in the database
@@ -807,6 +811,8 @@ src
 5. The blocks are indexed in a vector store group by thematic cateogry, file type (creating an inverted index).
 
 ### OCR.
+Implementation: [`src/backend/infrastructure/ocr/document_ai_adapter.py`](src/backend/infrastructure/ocr/document_ai_adapter.py)
+
 1. The backend uses Vertex AI Vision API.
 2. Extracts: Text, Layout structure, bounding boxes.
 3. Return the extracted information as a json.
@@ -843,6 +849,8 @@ src
 2. Generates the final DUA: filling fields automatically and applying color indicatores based on confidence
 
 ### Progress monitoring.
+Backend Implementation: [`src/backend/api/routers/status_router.py`](src/backend/api/routers/status_router.py) | Frontend: [`src/events/ProgressEventBus.ts`](src/events/ProgressEventBus.ts)
+
 1. The frontend initializes a polling mechanism using `ProgressEventBus` to subscribe to generation events.
 2. The user makes a request to the backend `/dua/generation/{id}/status` endpoint with the generation session ID.
 3. The backend retrieves the current generation state for that process from `GenerationStoreRepository` which maintains a single source of truth for that process of DUA generation.
@@ -856,11 +864,15 @@ src
 
 
 ### Results Obtained.
+Implementation: [`src/backend/api/routers/result_router.py`](src/backend/api/routers/result_router.py)
+
 1. The backend receive the changes requested on the document by the user and updates it.
 2. The backend receive the confirmation that its the final version of the generated DUA document.
 3. The backend sends the file for the user to download.
 
 ### Logout.
+Implementation: [`src/backend/api/routers/logout_router.py`](src/backend/api/routers/logout_router.py)
+
 1. the backend receive a logout request
 2. the backend deletes the session cache in redis
 
