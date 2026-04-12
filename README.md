@@ -811,7 +811,7 @@ src
 2. Extracts: Text, Layout structure, bounding boxes.
 3. Return the extracted information as a json.
 
-### Extracts structured fields from embeddings:
+### Extracts structured fields from embeddings.
 1. The backend sends each block to a NLP (Natural Language Processing) model specialized in customs
 2. It returns: 
 - Importer/exporter data
@@ -827,7 +827,7 @@ src
 3. Its stored as normalized structured data asociated with the vector database.
 4. Execute "Dua template mapping" workflow.
 
-### Dua template mapping:
+### Dua template mapping.
 1. the backend performs similarity search using embeddings
 2. Applies filtering using: One hot encoding of document categories
 3. Selects top 2 candidate blocks
@@ -838,14 +838,14 @@ src
 - 30% < x ≤ 70% → Yellow warning
 - x > 70% → Green warnin
 
-### Dua structure generation:
+### Dua structure generation.
 1. The backend applies formating rules and determines field requirements (text, codes, dynamic tables, images)
 2. Generates the final DUA: filling fields automatically and applying color indicatores based on confidence
 
-### Progress monitoring
+### Progress monitoring.
 1. The frontend initializes a polling mechanism using `ProgressEventBus` to subscribe to generation events.
 2. The user makes a request to the backend `/dua/generation/{id}/status` endpoint with the generation session ID.
-3. The backend retrieves the current generation state from `GenerationStore` (Singleton) which maintains a single source of truth for DUA generation progress.
+3. The backend retrieves the current generation state for that process from `GenerationStoreRepository` which maintains a single source of truth for that process of DUA generation.
 4. The backend returns the progress data including: current step (1-10), percentage completion (0-100), current task description, and status (PROCESSING, COMPLETED, FAILED).
 5. The `NotificationHub` (Observer/Pub-Sub pattern) publishes progress events to all subscribed frontend components whenever state changes occur.
 6. The `ProgressEventBus` (Event Bus pattern) receives these events and distributes them to interested UI listeners without tight coupling.
@@ -855,12 +855,12 @@ src
 8. If generation fails at any step, the backend publishes a GENERATION_FAILED event and stores error details in GenerationStore with step number and error message for user review.
 
 
-### Results Obtained
+### Results Obtained.
 1. The backend receive the changes requested on the document by the user and updates it.
 2. The backend receive the confirmation that its the final version of the generated DUA document.
 3. The backend sends the file for the user to download.
 
-### Logout
+### Logout.
 1. the backend receive a logout request
 2. the backend deletes the session cache in redis
 
@@ -876,6 +876,8 @@ src
 
 
 ---
+## Design Considerations
+
 
 ---
 

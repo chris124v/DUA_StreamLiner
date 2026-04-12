@@ -23,7 +23,7 @@ Container_Boundary(processor, "Document Processor") {
 
     Component(hash_service, "HashService", "Service", "Generates hashes")
 
-    Component(vector_indexer, "VectorIndexer", "Service", "Stores/searches embeddings")
+    Component(vector_indexer, "VectorIndexer", "Repository", "Stores/searches embeddings")
 
     Component(similarity_search, "SimilaritySearch", "Service", "Finds similar blocks")
 
@@ -34,15 +34,30 @@ Container_Boundary(processor, "Document Processor") {
     Component(mapping_service, "DUAMappingService", "Service", "Prepares data for AI mapping")
 
     ' ===== TEMPLATE MANAGEMENT =====
-    Component(template_fetcher, "TemplateFetcher", "Service", "Fetches official template")
+    Component(template_fetcher, "TemplateFetcher", "Adapter", "Fetches official template")
 
-    Component(template_repository, "TemplateRepository", "Storage", "Stores current template")
+    Component(template_repository, "TemplateRepository", "Repository", "Stores current template")
 
     Component(template_comparator, "TemplateComparator", "Service", "Compares templates")
 
     Component(template_parser, "TemplateParser", "Service", "Splits template")
 
     Component(template_updater, "TemplateUpdater", "Service", "Updates changed blocks")
+
+    ' ===== YOUR PATTERNS =====
+    Component(strategy, "DocumentProcessingStrategy", "Strategy", "Processing per document type")
+
+    Component(field_mapper, "DUAFieldMapper", "Adapter", "Maps extracted data to DUA format")
+
+    Component(event_bus, "ProgressEventBus", "Event Bus", "Async processing events")
+
+    Component(notification_hub, "NotificationHub", "Observer", "Publishes notifications")
+
+    Component(store, "GenerationStore", "Singleton", "Global DUA state")
+
+    Component(ui_coordinator, "UIRefreshCoordinator", "Mediator", "Coordinates UI updates")
+
+    Component(api_client, "ApiClient", "Template Method", "Handles HTTP calls")
 
 }
 
@@ -52,10 +67,12 @@ System_Ext(ai_api, "AI API", "Determines DUA mapping and confidence")
 ' ===== FILE FLOW =====
 Rel(file_handler, type_detector, "Detect type")
 
-Rel(type_detector, word_parser, "Word")
-Rel(type_detector, pdf_parser, "PDF")
-Rel(type_detector, excel_parser, "Excel")
-Rel(type_detector, ocr_adapter, "Image")
+Rel(type_detector, strategy, "Select strategy")
+
+Rel(strategy, word_parser, "Word")
+Rel(strategy, pdf_parser, "PDF")
+Rel(strategy, excel_parser, "Excel")
+Rel(strategy, ocr_adapter, "Image")
 
 Rel(word_parser, block_parser, "Content")
 Rel(pdf_parser, block_parser, "Content")
@@ -80,14 +97,21 @@ Rel(similarity_search, vector_indexer, "Search")
 
 Rel(similarity_search, mapping_service, "Top matches")
 
-' ===== AI MAPPING (CORREGIDO) =====
+' ===== AI MAPPING =====
 Rel(mapping_service, ai_api, "Send candidate blocks")
 Rel(ai_api, mapping_service, "Returns DUA section + confidence")
 
 Rel(template_repository, mapping_service, "Provides template structure")
 
+Rel(mapping_service, field_mapper, "Normalize data")
+
+Rel(field_mapper, store, "Store DUA data")
+
 ' ===== TEMPLATE FLOW =====
-Rel(template_fetcher, template_comparator, "Official template")
+Rel(template_fetcher, api_client, "Fetch via HTTP")
+
+Rel(api_client, template_comparator, "Send template")
+
 Rel(template_repository, template_comparator, "Current template")
 
 Rel(template_comparator, template_parser, "If changes")
@@ -99,5 +123,16 @@ Rel(template_parser, template_updater, "Blocks")
 
 Rel(template_updater, template_repository, "Update template")
 Rel(template_updater, vector_indexer, "Update embeddings")
+
+' ===== EVENTS & UI =====
+Rel(strategy, event_bus, "Emit progress")
+
+Rel(event_bus, notification_hub, "Publish events")
+
+Rel(event_bus, store, "Update state")
+
+Rel(store, ui_coordinator, "State updates")
+
+Rel(notification_hub, ui_coordinator, "Notify UI")
 
 @enduml

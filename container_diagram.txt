@@ -1,60 +1,74 @@
 @startuml
-' C4 library (más estable)
 !includeurl https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
 
-Person(user, "User", "Customs operator")
+Person(user, "User")
 
-System_Ext(min_hacienda, "Ministerio de Hacienda", "Provides official DUA template")
-System_Ext(vertex_ai, "Vertex AI AutoML", "Document classification & embeddings")
-System_Ext(ocr_service, "OCR Service", "Text extraction from images")
-System_Ext(ai_api, "AI API", "DUA mapping & confidence scoring")
+System_Ext(min_hacienda, "Ministerio de Hacienda")
+System_Ext(vertex_ai, "Vertex AI")
+System_Ext(ocr_service, "OCR Service")
+System_Ext(ai_api, "AI API")
 
 System_Boundary(system, "DUA Processing System") {
 
-    Container(static_content, "Static Content", "HTML, JS, CSS", "Served to the browser")
+    ' ===== PRESENTATION =====
+    Container(ui, "Frontend", "Web App", "User interface")
 
-    Container(ui, "Frontend UI", "Web App", "Allows users to upload documents and view generated DUA")
+    ' ===== APPLICATION LAYER =====
+    System_Boundary(app_layer, "Application Layer") {
 
-    Container(api, "Backend API", "REST API", "Handles requests and orchestrates workflow")
+        Container(api, "Backend API", "REST API", "Orchestrates workflow")
 
-    Container(processor, "Document Processor", "Worker", "Processes files, OCR, embeddings and extraction")
+        Container(dua_generation, "DUA Generation Service", "Service", "Coordinates DUA creation")
 
-    Container(vector_db, "Vector Store", "Vector DB", "Stores embeddings and performs similarity search")
+    }
 
-    Container(database, "Database", "PostgreSQL", "Stores metadata, hashes and results")
+    ' ===== DOMAIN LAYER =====
+    System_Boundary(domain_layer, "Domain Layer") {
 
-    Container(storage, "File Storage", "GCS", "Stores uploaded files")
-    
-    Container(rule_engine, "Rule Engine", "Service", "Applies validations and business rules")
+        Container(doc_processing, "Document Processing", "Service", "Parsing, extraction, embeddings")
 
-    Container(generator, "DUA Generator", "Service", "Generates final DUA document")
+        Container(template_mgmt, "Template Management", "Service", "Template versioning and structure")
+
+        Container(mapping_domain, "DUA Mapping Domain", "Service", "Business rules for mapping")
+
+    }
+
+    ' ===== INFRASTRUCTURE =====
+    System_Boundary(infra_layer, "Infrastructure Layer") {
+
+        Container(storage, "File Storage", "GCS", "Stores files")
+
+        Container(db, "Database", "PostgreSQL", "Stores metadata")
+
+        Container(vector_db, "Vector Store", "Vector DB", "Embeddings")
+
+    }
+
 }
 
-Rel(user, static_content, "Loads UI")
+' ===== RELATIONS =====
 Rel(user, ui, "Uses")
 
-Rel(ui, api, "API calls (HTTPS)")
+Rel(ui, api, "HTTPS")
 
-Rel(api, storage, "Stores files")
-Rel(api, database, "Stores metadata")
+Rel(api, dua_generation, "Triggers")
 
-Rel(api, processor, "Triggers processing")
+Rel(dua_generation, doc_processing, "Process documents")
+Rel(dua_generation, template_mgmt, "Uses template")
+Rel(dua_generation, mapping_domain, "Maps data")
 
-Rel(processor, storage, "Reads files")
-Rel(processor, vector_db, "Stores embeddings")
-Rel(processor, database, "Stores extracted data")
+Rel(doc_processing, vector_db, "Stores embeddings")
+Rel(doc_processing, storage, "Reads files")
 
-Rel(processor, vertex_ai, "Classification")
-Rel(processor, ocr_service, "OCR")
-Rel(processor, ai_api, "Mapping")
+Rel(template_mgmt, min_hacienda, "Fetch template")
 
-Rel(api, min_hacienda, "Fetch template")
+Rel(mapping_domain, ai_api, "AI mapping")
 
-Rel(processor, rule_engine, "Validates data")
-Rel(rule_engine, generator, "Sends validated data")
+Rel(doc_processing, vertex_ai, "Classification")
+Rel(doc_processing, ocr_service, "OCR")
 
-Rel(generator, database, "Stores DUA")
-Rel(api, generator, "Requests DUA")
-Rel(api, ui, "Returns completed DUA")
+Rel(api, db, "Stores metadata")
+
+Rel(api, ui, "Returns DUA")
 
 @enduml
