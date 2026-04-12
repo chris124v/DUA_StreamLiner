@@ -482,7 +482,7 @@ The following classes are proposed to keep the frontend architecture modular, te
 | ApiClient | [src/apiClients/ApiClient.ts](src/apiClients/ApiClient.ts) | Base HTTP client with reusable request logic | Template Method | Defines a common request flow reused by specialized API clients |
 | NotificationHub | [src/notifications/NotificationHub.ts](src/notifications/NotificationHub.ts) | Publishes system-wide notifications | Observer (Pub-Sub) | Enables decoupled communication between components |
 | ProgressEventBus | [src/events/ProgressEventBus.ts](src/events/ProgressEventBus.ts) | Handles async process events | Event Bus | Centralizes asynchronous event distribution across the system |
-| GenerationStoreRepository | [src/state/store/GenerationStoreRepository.ts](src/state/store/GenerationStore.ts) | Stores each DUA generation state | Repository | It manages multiple GenerationStore instances (one per generation); the Repository is a Singleton, but each GenerationStore is independent. |
+| GenerationStore | [src/state/store/GenerationStore.ts](src/state/store/GenerationStore.ts) | Stores DUA generation state | Singleton | Ensures a single global state source for consistency |
 | UIRefreshCoordinator | [src/ui/UIRefreshCoordinator.ts](src/ui/UIRefreshCoordinator.ts) | Coordinates UI updates across components | Mediator | Reduces direct dependencies between UI components |
 | DocumentProcessingStrategy | [src/services/documentProcessing/strategies/DocumentProcessingStrategy.ts](src/services/documentProcessing/strategies/DocumentProcessingStrategy.ts) | Defines contract for processing different document types | Strategy | Enables interchangeable processing logic for PDF, Excel, Word, and images |
 | DUAFieldMapper | [src/utils/DUAFieldMapper.ts](src/utils/DUAFieldMapper.ts) | Maps extracted data into DUA field structure | Adapter | Transforms heterogeneous extracted data into a unified DUA format |
@@ -600,9 +600,10 @@ src
 - All communication between backend services and GCP managed services (Cloud SQL, Storage, Pub/Sub) is secured via HTTPS/TLS 1.3 using Google-managed certificates
  
 ### Encryption at Rest
-- The Encryption algorithm will use AES-256 to storage sensitive content in google cloud sql.
+- All data stored in Google Cloud SQL is encrypted at rest using AES-256 also in Google Cloud Storage everything is encrypted with AES-256 by default.
 - Encryption keys are managed through Google Cloud KMS (Customer-Managed Encryption Keys - CMEK).
 - Encryption is handled transparently by the cloud provider; no application-level encryption of the database is performed.
+
  
 ### Secrets
 - All secrets managed in Google Secret Manager; never stored in the repository or hardcoded as environment variables.
@@ -685,7 +686,7 @@ src
 * Environments: 
   - Dev: Cloud Run with 2 minimum instances (automatic deploy)
   - Staging: Cloud Run with 3 minimum instances (automatic deploy)
-  - Prod: Cloud Run with auto-scale 1-10 instances (manual approval required, blue-green deployment), we use small instances because its cheaper and most external APIs will hit a limit before we get need more than those 10 instances.
+  - Prod: Cloud Run with auto-scale 5-50 instances (manual approval required, blue-green deployment)
  
 ### Container Registry
 * Google Artifact Registry: Store Docker images with automatic vulnerability scanning and binary authorization (approval)
@@ -751,118 +752,224 @@ src
 
 ## Backend Key Workflows
 
-### Login
-1. The user sends credentials from the frontend to the Auth0 service
-2. The frontend sends the JWT to the backend through a GET authorization (the JWT travels in the bearer); here Google Cloud API Gateway is responsible for validating that the endpoint exists and verifying the rate limit
-3. Google Cloud API routes the request to Cloud Run (where the backend is hosted)
-4. FastAPI validates the JWT with Auth0 (JWKS)
-5. If validated, it performs a mapping to Domain-Driven Design (stores the user values in a class)
-6. Executes the "Session Cache" workflow
+### Step 0
+The user chooses whether they want to perform an export or import procedure (this is important to determine which template should be used and which fields will be mandatory).
 
-### Session Cache
-1. It checks if Google Cloud Memorystore (Redis) contains the user; if it does then it returns the user with the response.
-2. It it doesnt: Reads the database for the auth0_id then maps it to DDD (from DB user to Domain user) and save it in Redis
+* The backend receives the operation type (import/export) and sets:
+- The corresponding DUA template
+- Required fields
+- Validation rules
+- Processing configuration
 
-### Set up the generator
-1. The backend receive an option between "Import" and "Export" process.
-2. The backend choose the type of dua template used based on the selection.
-3. The backend receive files and executes the "Upload files to generate dua" workflow
+---
 
-### Upload files to generate dua
-1. The backend receive the list of files to be uploaded
-2. Open a streaming transfer file by file to received the files content in raw format
-3. All the files are store in Google Cloud Service and map in the database
+### Step 1
+There is a file called "current official DUA template" defined by the Ministerio de Hacienda and other "n" files (these may be Excel, Word, PDF, or images) located in a folder path (environment variable).
 
-### Comparison between files of the user (not an image).
-1. The backend loads all uploaded files from the configured folder path and already process files of the same user
-2. The backend divides the new files in blocks and creates embeddings.
-3. The backend then calculate the hash and compared with existing ones; if it already exists, the embedding is reused.
-4. if it doesnt exist it sends them to the workflow of thematic classification.
+* The backend loads:
+- The current DUA template from storage (GCS)
+- All uploaded files from the configured folder path
+- Metadata associated with each file (name, type, size, hash)
 
-### Comparison between files of the user (image).
-1. The backend loads all uploaded files from the configured folder path and already process files of the same user
-2. The backend sends the image to "ocr" workflow to extract text, layout structure, bounding boxes
-2. The backend divides the extracted information into blocks and creates embeddings.
-3. The backend then calculate the hash and compared with existing ones; if it already exists, the embedding is reused.
-4. if it doesnt exist it sends them to the workflow of thematic classification.
+---
 
-### Comparison between Dua Templates 
-1. The backend loads the dua template hash and embedding from the GCS.
-2. The backend loads the "updated" dua template.
-2. The backend divides the new files in blocks and creates embeddings.
-3. The backend then calculate the hash and compared with existing ones; if it already exists, the embedding is reused.
-4. if it doesnt exist its send to the workflow of thematic classification.
+### Step 2
+Separate the files into 4 categories: Image, Excel, Word, PDF.
 
-### Thematic classification.
-1. The backend sends the embeddings of blocks to Vertex Ai AutoML classification model
-2. it receivs a probability vector (0-1) for categories:
-- Commercial invoice
-- Transport document
-- Certificate of origin
-- Packing list
-- Financial document
-- Other
-3. Selects the top 2 categories with highest probability
-4. Stores: File type category, thematic categories, confidence scores, embedding, block, file usage (DUA template, User files), Expected field type (can be null, its used in DUA Templates), validation rules(can be null, its used in DUA Templates), rendering type(can be null, its used in DUA Templates).
-5. The blocks are indexed in a vector store group by thematic cateogry, file type (creating an inverted index).
+Additionally, before any embedding is performed, a thematic classification of the entire file is carried out.
 
-### OCR.
-1. The backend uses Vertex AI Vision API.
-2. Extracts: Text, Layout structure, bounding boxes.
-3. Return the extracted information as a json.
+* The backend:
+- Detects file type based on MIME/extension
+- Sends each file to Vertex AI AutoML classification model
+- Receives a probability vector (0–1) for categories:
+  - Commercial invoice
+  - Transport document
+  - Certificate of origin
+  - Packing list
+  - Financial document
+  - Other
 
-### Extracts structured fields from embeddings:
-1. The backend sends each block to a NLP (Natural Language Processing) model specialized in customs
-2. It returns: 
-- Importer/exporter data
-- Supplier info
-- Goods description
-- Quantities, weights, FOB/CIF values
-- Incoterms
-- Transport info
-- Invoice number/date
-- Country of origin
-- Customs regime
-- syntactic validation:{Country codes validation, Date format validation, Numeric consistency checks}
-3. Its stored as normalized structured data asociated with the vector database.
-4. Execute "Dua template mapping" workflow.
+- Selects the top 2 categories with highest probability
+- Stores:
+  - File type category (PDF, Word, etc.)
+  - Thematic category
+  - Confidence scores
 
-### Dua template mapping:
-1. the backend performs similarity search using embeddings
-2. Applies filtering using: One hot encoding of document categories
-3. Selects top 2 candidate blocks
-4. Sends them to an Ai API
-5. Receives: Target Dua section mapping, confidence score
-6. it gives a warning color based on:
+---
+
+### Step 3
+Check whether the version of the template used for the comparison hash is still the most updated one.
+
+* The backend:
+- Retrieves the official DUA template from Ministerio de Hacienda
+- Compares it against the stored template using hash/block comparison
+- If differences are detected → triggers Step 3.1 only for changed blocks
+
+---
+
+### Step 3.1
+Traverse the template using block division through embeddings and store the detected sections in a hash for later comparison.
+
+* The backend:
+- Splits the template into logical blocks (sections, tables, fields)
+- Generates embeddings for each block
+- Computes a hash per block
+
+- For changed blocks:
+  - Sends them to a neural network
+  - Receives structured metadata:
+    - Block hash
+    - Embedding
+    - Expected field type
+    - Validation rules
+    - Rendering type (text, table, code, conditional)
+
+- Updates only modified blocks in the system
+
+---
+
+### Step 4
+Word files are traversed using block division and embeddings.
+
+* The backend:
+- Parses Word structure (paragraphs, tables, sections)
+- Splits content into blocks
+- Generates embeddings per block
+
+- Indexes blocks in a vector store grouped by:
+  - Thematic category
+  - File type
+
+- This acts as an inverted index:
+  - Example: Searching "country of origin" → only checks "certificate of origin" documents
+
+---
+
+### Step 5
+The same process is performed for Excel and PDF files, considering their structural particularities.
+
+* The backend:
+- Excel:
+  - Reads sheets, tables, and cells
+  - Detects structured regions
+  - Converts into semantic blocks
+- PDF:
+  - Extracts text streams
+  - Detects layout blocks and tables
+  - Preserves positional structure
+
+- Generates embeddings and indexes blocks in the vector store
+
+---
+
+### Step 6
+The same process is performed for images using advanced OCR.
+
+* The backend:
+- Uses OCR (e.g., Vertex AI Vision / Document AI)
+- Extracts:
+  - Text
+  - Layout structure
+  - Bounding boxes
+
+- Converts detected regions into blocks
+- Generates embeddings
+- Indexes them in the vector store
+
+---
+
+### Step 7
+Through AI models trained to understand customs terminology, the system identifies and classifies key fields.
+
+* The backend:
+- Sends each block to an NLP  (Natural Language Processing) model specialized in customs
+- Extracts structured fields:
+  - Importer/exporter data
+  - Supplier info
+  - Goods description
+  - Quantities, weights, FOB/CIF values
+  - Incoterms
+  - Transport info
+  - Invoice number/date
+  - Country of origin
+  - Customs regime
+
+- Performs syntactic validation:
+  - Country codes validation
+  - Date format validation
+  - Numeric consistency checks
+
+- Stores normalized structured data
+
+---
+
+### Step 8
+The 2 texts with the highest similarity percentage are selected.
+
+* The backend:
+- Performs similarity search using embeddings
+- Applies filtering using:
+  - One-hot encoding of document category
+
+- Selects top 2 candidate blocks
+- Sends them to an AI API
+
+- Receives:
+  - Target DUA section mapping
+  - Confidence score
+
+* Warning Scale
 - x ≤ 30% → Red warning
 - 30% < x ≤ 70% → Yellow warning
-- x > 70% → Green warnin
+- x > 70% → Green warning
 
-### Dua structure generation:
-1. The backend applies formating rules and determines field requirements (text, codes, dynamic tables, images)
-2. Generates the final DUA: filling fields automatically and applying color indicatores based on confidence
+---
 
-### Progress monitoring
-1. The frontend initializes a polling mechanism using `ProgressEventBus` to subscribe to generation events.
-2. The user makes a request to the backend `/dua/generation/{id}/status` endpoint with the generation session ID.
-3. The backend retrieves the current generation state from `GenerationStore` (Singleton) which maintains a single source of truth for DUA generation progress.
-4. The backend returns the progress data including: current step (1-10), percentage completion (0-100), current task description, and status (PROCESSING, COMPLETED, FAILED).
-5. The `NotificationHub` (Observer/Pub-Sub pattern) publishes progress events to all subscribed frontend components whenever state changes occur.
-6. The `ProgressEventBus` (Event Bus pattern) receives these events and distributes them to interested UI listeners without tight coupling.
-7. Upon completion, the backend publishes a GENERATION_COMPLETE event through `ProgressEventBus` which triggers:
-    - NotificationHub sends a system-wide notification to inform the user
-    - UIRefreshCoordinator updates the UI to transition from progress monitoring to results display
-8. If generation fails at any step, the backend publishes a GENERATION_FAILED event and stores error details in GenerationStore with step number and error message for user review.
+### Step 9
+Structured generation of the DUA document.
 
+* The backend:
+- Determines field requirements:
+  - Text
+  - Codes
+  - Dynamic tables
+  - Images
 
-### Results Obtained
-1. The backend receive the changes requested on the document by the user and updates it.
-2. The backend receive the confirmation that its the final version of the generated DUA document.
-3. The backend sends the file for the user to download.
+- Applies:
+  - Formatting rules (dates, units)
+  - Rule engine (dependencies between fields)
 
-### Logout
-1. the backend receive a logout request
-2. the backend deletes the session cache in redis
+- Generates the final DUA:
+  - Preserving original layout
+  - Filling fields automatically
+  - Applying color indicators based on confidence
+
+---
+
+### Step 10
+Reprocessing control and cost optimization.
+
+* The backend:
+- Stores for each block:
+  - Block hash
+  - Embedding
+
+- When a new file is uploaded:
+  - Calculates block hash
+  - Compares with existing hashes
+
+- If block already exists:
+  - Reuses embedding
+  - Skips processing
+
+- If block is new:
+  - Processes normally through pipeline
+
+- This reduces:
+  - Processing time
+  - API costs
+  - Redundant computations
+
 
 ---
 
@@ -876,6 +983,491 @@ src
 
 
 ---
+
+## Design Considerations
+
+### 1. System Configuration & Parameters
+
+#### 1.1 API Gateway & Load Balancing
+- **API Gateway**: Google Cloud API Gateway (Premium tier)
+- **Maximum Concurrent Requests**: 100 per user
+- **Maximum Payload Size**: 10 MB (general), 50 MB (document upload endpoint)
+- **Rate Limiting**: Enforced per-user to prevent abuse
+- **Timeout Settings**: Asynchronous processing with Pub/Sub for long-running operations (document processing > 30 seconds)
+- **Circuit Breaker Thresholds**: 
+  - Vertex AI: 3 consecutive failures → 30-second break window
+  - Document AI: 3 consecutive failures → 30-second break window
+
+#### 1.2 Database Configuration
+- **Database Engine**: PostgreSQL 16 on Google Cloud SQL (HA mode)
+- **Connection Pool Size**: Auto-managed by Cloud SQL; minimum 10 connections
+- **Maximum Connections**: 100 concurrent connections
+- **Query Timeout**: 30 seconds (configurable per query type)
+- **Backup Strategy**: Automated daily backups; 7-day retention
+- **Failover Time**: < 30 seconds (automated HA failover)
+
+#### 1.3 Cache Configuration
+- **Cache Service**: Google Cloud Memorystore (Redis)
+- **Cache Tier**: Standard or Premium (depends on redundancy requirements)
+- **Session Expiration**: 1 hour (JWT token expiration)
+- **Cache Entry TTL**: 24 hours (template metadata), 12 hours (embeddings)
+- **Max Memory**: Auto-scaled based on load; base 2GB
+- **Eviction Policy**: LRU (Least Recently Used)
+
+#### 1.4 Storage Configuration
+- **Hot Storage**: Google Cloud SQL (Year 1 data)
+- **Cool Storage**: Google Cloud Storage Standard class (Year 2 data)
+- **Archive Storage**: Google Cloud Storage Archive class (Year 3+ data, minimum 90-day retention)
+- **Default Encryption**: AES-256 (managed by Google)
+- **Bucket Location**: us-central1 (primary), us-west1 (failover)
+- **Storage Classes**:
+  - Standard: $0.020/GB/month (current + previous year)
+  - Nearline: $0.010/GB/month (1-3 months old)
+  - Coldline: $0.004/GB/month (3-12 months old)
+  - Archive: $0.0025/GB/month (12+ months, minimum 90 days retention)
+
+#### 1.5 Asynchronous Processing
+- **Message Broker**: Google Cloud Pub/Sub
+- **Subscription Type**: Pull-based
+- **Max Concurrent Pulls**: 1,000 per subscription
+- **Retry Policy**: Exponential backoff (100ms → 200ms → 400ms → max 32 seconds)
+- **Dead Letter Policy**: Messages failing after 5 retries sent to dead-letter topic
+- **Batch Processing**: Up to 100 messages per batch; max batch wait 100ms
+- **Max Lease Extension**: 600 seconds
+
+#### 1.6 Container Orchestration
+- **Container Registry**: Google Artifact Registry
+- **Image Scanning**: Automatic vulnerability scanning on push
+- **Binary Authorization**: Required for production deployments
+- **Cloud Run Configuration**:
+  - **Dev Environment**: 2 minimum instances, 1 maximum instance, 256 MB memory
+  - **Staging Environment**: 3 minimum instances, 10 maximum instances, 512 MB memory
+  - **Production Environment**: 5 minimum instances, 50 maximum instances, 1 GB memory
+- **CPU Allocation**: 1 CPU (dev/staging), 2 CPUs (production)
+- **Request Timeout**: 600 seconds (max for Cloud Run)
+- **Execution Environment**: Python 3.12 runtime
+
+#### 1.7 AI/ML Model Configuration
+- **Vertex AI (Gemini) Model**: `gemini-1.5-pro` (latest stable)
+- **Temperature**: 0.2 (low randomness for structured extraction)
+- **Max Tokens**: 4,096 (output limit for field extraction)
+- **Top-P**: 0.8 (nucleus sampling)
+- **Top-K**: 40
+- **Retry Strategy**: 3 attempts with exponential backoff before circuit breaker activation
+- **Batch Processing**: Up to 50 documents per batch to optimize API costs
+
+#### 1.8 OCR Processing
+- **OCR Service**: Google Cloud Document AI
+- **Processor Type**: Document OCR processor (v1)
+- **Concurrent Processing**: Max 20 concurrent OCR operations per document type
+- **OCR Confidence Threshold**: > 85% for automatic field extraction (yellow flag if 70-85%, red flag if < 70%)
+- **Page Limit**: Max 500 pages per document
+- **Supported Formats**: PDF, PNG, JPEG, TIFF, GIF, WEBP
+
+#### 1.9 Notification & Logging
+- **Log Format**: Structured JSON with trace_id, request_id, user_id, user_role, timestamp, level, message
+- **Log Storage**: Google Cloud Logging (1-year retention for general logs)
+- **Audit Log Retention**: 3 years (production data retention requirement)
+- **Log Sampling**: 100% for errors/critical, 10% for info/debug
+- **Distributed Trace Sampling**: 10% of requests sampled to Cloud Trace
+- **Log Destination**: Cloud Logging workspace (shared with frontend)
+
+#### 1.10 Authentication & Session
+- **Token Provider**: Auth0 with Google OAuth
+- **Token Type**: JWT (JSON Web Token)
+- **Token Expiration**: 24 hours
+- **Refresh Token Expiration**: 7 days
+- **Token Signing Algorithm**: RS256 (RSA SHA-256)
+- **Session Cache**: Redis (Memorystore)
+- **Session Timeout**: 24 hours of inactivity
+
+---
+
+### 2. Resource Allocation
+
+#### 2.1 Compute Resources
+
+| Environment | Service | Min Instances | Max Instances | Memory/Instance | CPU/Instance | Auto-Scale Trigger |
+|-------------|---------|---------------|---------------|-----------------|--------------|-------------------|
+| Development | Cloud Run | 2 | 5 | 256 MB | 1 | CPU > 70% or concurrency > 80 |
+| Staging | Cloud Run | 3 | 10 | 512 MB | 1 | CPU > 70% or concurrency > 80 |
+| Production | Cloud Run | 5 | 50 | 1 GB | 2 | CPU > 70% or concurrency > 80 |
+
+#### 2.2 Database Resources
+- **Cloud SQL Machine Type (Production)**: db-custom-4-16384 (4 vCPU, 16 GB RAM minimum, scalable)
+- **Storage**: 100 GB initial (auto-expandable)
+- **Read Replicas**: 2 (for read-heavy workloads)
+- **Backup Retention**: 7 days automated backups
+- **HA Configuration**: Regional high-availability with automatic failover
+
+#### 2.3 Cache Resources
+- **Redis Tier**: Standard (6 GB minimum, auto-scaled to 16 GB max)
+- **Zone Redundancy**: Multi-zone for standard tier
+- **Eviction Policy**: LRU with 80% memory threshold
+
+#### 2.4 Storage Resources
+- **Bucket Size**: Unlimited (autoscaling)
+- **Regional Redundancy**: Multi-region replication (us-central1, us-west1)
+- **Transfer Quota**: 100 TB/month free tier (additional cost per GB beyond limit)
+
+#### 2.5 Networking Resources
+- **VPC (Virtual Private Cloud)**: Private VPC for backend
+- **Cloud SQL Access**: Private IP only (no public IP)
+- **Cloud Armor Rules**: 
+  - Max 30 security policies per project
+  - 5 rules per policy
+- **Firewall Rules**: 
+  - Ingress: Allow only from Cloud API Gateway
+  - Egress: Allow to GCP managed services and Auth0 only
+
+#### 2.6 Secret Management
+- **Google Secret Manager**: 
+  - Max secret size: 65 KB per secret
+  - Versioning: 10 versions per secret (auto-managed)
+  - Replication: Automatic geo-replication
+
+---
+
+### 3. Algorithm Selection & Parameters
+
+#### 3.1 Document Classification Algorithm
+- **Algorithm Type**: Multi-class text classification using Vertex AI AutoML
+- **Input Features**: Document text (full content), file type, file name
+- **Output Classes**:
+  - Commercial Invoice
+  - Transport Document
+  - Certificate of Origin
+  - Packing List
+  - Financial Document
+  - Other
+- **Confidence Threshold**: 
+  - High confidence: > 0.85
+  - Medium confidence: 0.70-0.85 
+  - Low confidence: < 0.70
+- **Model Training Data**: Historical Costa Rican customs documents
+- **Model Retraining Schedule**: Quarterly or when accuracy drops below 92%
+
+#### 3.2 Embedding Generation Algorithm
+- **Embedding Model**: Google's Universal Sentence Encoder v5 (via Vertex AI)
+- **Embedding Dimension**: 512 dimensions
+- **Chunking Strategy**: 
+  - Max chunk size: 512 tokens (~2,000 characters)
+  - Overlap: 50 tokens for context preservation
+- **Similarity Metric**: Cosine similarity (threshold > 0.7 for semantic relevance)
+- **Vector Store**: In-memory index with periodic persistence to Cloud Storage
+
+#### 3.3 Field Extraction Algorithm
+- **Algorithm Type**: Named Entity Recognition (NER) + Structured Extraction via LLM
+- **Model**: Google Vertex AI Gemini 1.5 Pro
+- **Extraction Fields**:
+  - Importer/Exporter Data (regex + entity extraction)
+  - Supplier Information (NER for organization names)
+  - Product Description (semantic similarity to HS codes)
+  - Quantity/Weight (numeric extraction + validation)
+  - Incoterms (pattern matching against INCOTERMS 2020 rules)
+  - Transport Info (modal detection: maritime/air/land)
+  - Invoice Details (date extraction with ISO 8601 validation)
+  - Country of Origin (ISO 3166-1 alpha-3 code matching)
+  - Customs Regime (Pattern matching to Costa Rican regimes)
+- **Temperature**: 0.2 (low randomness for deterministic extraction)
+- **Validation Logic**:
+  - Country codes: ISO 3166-1 alpha-3 validation
+  - Dates: ISO 8601 format validation (YYYY-MM-DD)
+  - Quantities: Positive numeric validation
+  - Currency codes: ISO 4217 validation
+
+#### 3.4 Similarity Matching Algorithm
+- **Primary Algorithm**: Vector cosine similarity (embeddings)
+- **Secondary Filter**: One-hot encoding classification (document category pre-filtering)
+- **Ranking Method**: 
+  1. Compute cosine similarity between extracted block and template sections
+  2. Apply category filter (only compare within same document type)
+  3. Select top 2 candidates with highest similarity
+- **Similarity Score Interpretation**:
+  - x ≤ 30%: Red warning (high risk of misclassification)
+  - 30% < x ≤ 70%: Yellow warning (moderate uncertainty)
+  - x > 70%: Green warning (high confidence)
+- **Threshold for Automatic Mapping**: > 0.85 (confidence > 85%)
+
+#### 3.5 Block Hashing Algorithm
+- **Algorithm**: SHA-256
+- **Input**: Block content (text) + block type (document category)
+- **Hash Storage**: Indexed in Cloud SQL with embedding reference
+- **Hash Comparison**: Executed before processing (cache hit avoidance)
+- **Collision Handling**: Extremely rare with SHA-256; versioning used for edge cases
+
+#### 3.6 Rule Engine Algorithm
+- **Type**: Forward-chaining inference engine
+- **Dependency Rules** (Examples):
+  - IF "country of origin" = "Costa Rica" AND "incoterms" = "FOB" THEN "apply exemption rule X"
+  - IF "goods description" contains prohibited items THEN flag for manual review
+  - IF "quantity" > 1000 AND "weight" is missing THEN flag weight field as required
+- **Rule Priority**: Higher specificity rules execute first
+- **Conflict Resolution**: Last matching rule wins (order matters)
+
+#### 3.7 OCR Post-Processing Algorithm
+- **Algorithm**: Confidence scoring + fallback extraction
+- **Confidence Calculation**: Google Cloud Document AI confidence scores
+- **Low Confidence Handling**:
+  - If OCR confidence < 70%: Flag field as "Requires Verification"
+  - Attempt manual template matching as fallback
+  - Preserve original OCR data for human review
+
+---
+
+### 4. Agent Prototypes Definition
+
+#### 4.1 Document Classification Agent
+- **Purpose**: Categorize uploaded documents into predefined types
+- **Input**: Raw document file (bytes) + file metadata (name, type, size)
+- **Output**: Document category, confidence scores for each category
+- **Workflow**:
+  1. Detect file format (MIME type validation)
+  2. Extract text (via OCR for images, native parsing for Word/PDF/Excel)
+  3. Send text to Vertex AI classification model
+  4. Return top-2 categories with confidence scores
+- **Error Handling**: If no category > 50% confidence, classify as "Other"
+- **Performance SLA**: < 10 seconds per document
+
+#### 4.2 OCR Processing Agent
+- **Purpose**: Extract text and structure from scanned images and PDFs
+- **Input**: Document file (PDF/image) + page range (optional)
+- **Output**: Extracted text, detected tables, layout structure, bounding boxes
+- **Workflow**:
+  1. Send document to Google Cloud Document AI
+  2. Parse OCR response (text regions, confidence scores, tables)
+  3. Convert to structured blocks with positional metadata
+  4. Filter low-confidence regions (< 70% confidence → manual review flag)
+- **Parallelization**: Up to 20 concurrent OCR operations per document type
+- **Performance SLA**: < 5 seconds per page
+
+#### 4.3 Field Extraction Agent
+- **Purpose**: Extract key customs fields from document content
+- **Input**: Document text block + expected field types + context (document category)
+- **Output**: Extracted field values + confidence scores + validation status
+- **Workflow**:
+  1. Send text + field schema to Vertex AI Gemini
+  2. Extract structured fields using NER + LLM
+  3. Validate extracted values (format, range, allowed values)
+  4. Return confidence scores per field
+  5. Flag fields failing validation for manual review
+- **Supported Fields**: 
+  - Importer/Exporter data
+  - Supplier information
+  - Product description (with HS code suggestion)
+  - Quantities, weights, FOB/CIF values
+  - Incoterms
+  - Transport information
+  - Invoice number/date
+  - Country of origin
+  - Customs regime
+- **Performance SLA**: < 5 seconds per document block
+
+#### 4.4 Similarity Matching Agent
+- **Purpose**: Match extracted blocks to DUA template sections
+- **Input**: Extracted field values + DUA template structure + document category
+- **Output**: DUA section mapping + confidence scores + alternative matches (top-2)
+- **Workflow**:
+  1. Generate embeddings for extracted content
+  2. Search vector store using cosine similarity
+  3. Apply category filter (inverted index by document type)
+  4. Rank results by similarity score
+  5. Return top-2 candidates with confidence interpolation
+- **Confidence Mapping**:
+  - Cosine similarity > 0.85 → Green (automatic acceptance)
+  - 0.70-0.85 → Yellow (requires user confirmation)
+  - < 0.70 → Red (manual review required)
+- **Performance SLA**: < 3 seconds per field match
+
+#### 4.5 DUA Document Generation Agent
+- **Purpose**: Assemble final DUA document with validated field values
+- **Input**: Mapped field values + confidence scores + DUA template + document generation rules
+- **Output**: Word document (docx) with pre-filled fields + color-coded confidence indicators
+- **Workflow**:
+  1. Load DUA template structure
+  2. Apply rule engine (dependency validation)
+  3. Format values (date conversion, unit normalization, code validation)
+  4. Generate document with color coding:
+     - Green: Confidence > 70%
+     - Yellow: Confidence 30-70%
+     - Red: Confidence < 30%
+  5. Highlight fields requiring verification (yellow/red)
+  6. Return docx file for download
+- **Performance SLA**: < 10 seconds for document assembly
+
+#### 4.6 Template Update Agent
+- **Purpose**: Detect and process DUA template updates from Ministry of Finance
+- **Input**: New template document
+- **Output**: Detected changes + updated block metadata + migration guidance
+- **Workflow**:
+  1. Compute hash of new template
+  2. Compare against stored template hash
+  3. Identify changed blocks using diff algorithm
+  4. Generate embeddings only for changed blocks
+  5. Update block metadata in database
+  6. Log migration path for audit trail
+- **Change Detection**: Block-level granularity to minimize reprocessing
+- **Performance SLA**: < 30 seconds for full template update
+
+---
+
+### 5. Interface & Integration Definitions
+
+#### 5.1 Authentication Interface
+- **Provider**: Auth0 with Google OAuth 2.0
+- **Protocol**: OpenID Connect (OIDC)
+- **Token Endpoint**: `https://[AUTH0_DOMAIN]/oauth/token`
+- **Authorization Endpoint**: `https://[AUTH0_DOMAIN]/authorize`
+- **Scopes Required**: `openid`, `profile`, `email`
+- **Token Validation**: Backend validates JWT signature using Auth0 JWKS (JSON Web Key Set) endpoint
+- **Credential Verification** (Backend):
+  - NodeJS server validates Google ID Token
+  - Extracts user identity + roles/permissions
+  - Creates secure application session
+- **Role Mapping**:
+  - Google email → Auth0 user → application roles (Manager, Customs Agent)
+  - Permissions enforced at endpoint level
+
+#### 5.2 Document Processing Interface
+- **Input Contract**:
+  ```json
+  {
+    "operation_type": "import|export",
+    "documents": [
+      {
+        "file_path": "string",
+        "file_type": "pdf|word|excel|image",
+        "file_size_bytes": "integer"
+      }
+    ],
+    "template_version": "string",
+    "processing_options": {
+      "ocr_confidence_threshold": 0.7,
+      "similarity_threshold": 0.7,
+      "timeout_seconds": 600
+    }
+  }
+  ```
+- **Output Contract**:
+  ```json
+  {
+    "status": "success|error|partial",
+    "document_id": "uuid",
+    "extracted_fields": { ... },
+    "confidence_scores": { ... },
+    "warnings": [ ... ],
+    "dua_document_url": "gs://bucket/path/to/dua.docx",
+    "processing_time_ms": "integer"
+  }
+  ```
+
+#### 5.3 Google Cloud Document AI Interface
+- **Endpoint**: `https://documentai.googleapis.com/v1/projects/{project_id}/locations/{location}/processors/{processor_id}:process`
+- **Input**: PDF/image file (binary)
+- **Output**: 
+  - Extracted text
+  - Detected tables with cell values
+  - Layout structure (paragraphs, sections)
+  - Bounding box coordinates
+  - Confidence scores per region
+- **Error Handling**: Automatic retry with exponential backoff (max 3 retries)
+
+#### 5.4 Google Vertex AI Interface
+- **Endpoint**: `https://us-central1-aiplatform.googleapis.com/v1/projects/{project_id}/locations/us-central1/endpoints`
+- **Models Used**:
+  1. **Classification**: AutoML classification endpoint for document categorization
+  2. **LLM (Gemini)**: `/generativeai.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent`
+- **Request/Response Format**: JSON via REST API
+- **Error Handling**: Circuit breaker activation after 3 consecutive failures (30-second recovery)
+- **Rate Limiting**: 100 requests/minute (configurable per project)
+
+#### 5.5 Vector Store Interface
+- **Storage**: In-memory vector index with periodic persistence
+- **Index Structure**: Inverted index by document category + embedding index
+- **Query Interface**:
+  ```python
+  search(embedding: List[float], category: str, top_k: int = 2) -> List[SearchResult]
+  ```
+- **Persistence**: Serialized to Cloud Storage (JSON format) every 12 hours or on update
+
+#### 5.6 DUA Template Interface
+- **Storage Location**: Google Cloud Storage (gs://bucket/dua-templates/)
+- **Template Format**: Binary (Microsoft Word docx with embedded metadata)
+- **Metadata Structure**:
+  ```json
+  {
+    "template_version": "string",
+    "ministry_version": "string",
+    "blocks": [
+      {
+        "block_id": "uuid",
+        "block_hash": "string",
+        "embedding": [...],
+        "expected_field_type": "text|code|table|conditional",
+        "validation_rules": [...],
+        "rendering_type": "text|table|code|conditional"
+      }
+    ]
+  }
+  ```
+- **Update Mechanism**: Hash comparison; only changed blocks reprocessed
+
+#### 5.8 Database Interface
+- **Connection String**: `postgresql://user:password@cloudsql-private-ip:5432/dua_db`
+- **Primary Tables**:
+  - `documents`: Raw uploaded documents metadata
+  - `document_blocks`: Indexed blocks with embeddings
+  - `document_type`: type of the document (DUA GENERATED, EXCEL, WORD, DUA TEMPLATE, PDF, IMAGE)
+  - `extraction_results`: Extracted fields + confidence scores
+  - `audit_logs`: All operations (3-year retention)
+- **Connection Pool**: Auto-managed by Cloud SQL Connector
+
+#### 5.10 Secret Manager Interface
+- **Retrieval**: Backend retrieves secrets at startup and caches in memory
+- **Stored Secrets**:
+  - `google-oauth-client-id`
+  - `google-oauth-client-secret`
+  - `auth0-domain`
+  - `auth0-client-id`
+  - `auth0-client-secret`
+  - `database-connection-string`
+  - `firebase-service-account-key`
+  - `vertex-ai-api-key`
+  - `document-ai-processor-id`
+- **Credential Format**: Base64-encoded JSON (for service accounts) or plaintext (for API keys)
+- **Expiration**: No automatic rotation; manual rotation quarterly
+
+---
+
+### 6. Validation & Error Handling Rules
+
+#### 6.1 Input Validation
+- **File Size**: 
+  - General files: Max 10 MB
+  - Document upload: Max 50 MB
+  - OCR single page: Max 10 MB
+- **File Types Allowed**: `.pdf`, `.docx`, `.xlsx`, `.png`, `.jpg`, `.jpeg`, `.tiff`, `.gif`, `.webp`
+- **Character Encoding**: UTF-8 (validated at upload)
+- **Folder Path**: Must exist and be readable (tested before processing)
+
+#### 6.2 Output Validation
+- **DUA Document**: Must conform to Ministry of Finance template structure
+- **Field Values**: Must pass syntactic validation (country codes, dates, numeric ranges)
+- **Confidence Scores**: Must be numeric between 0.0 and 1.0
+- **Document Generation**: Must produce valid DOCX format (testable by Word/LibreOffice)
+
+#### 6.3 Error Recovery
+- **Temporary Errors** (transient failures):
+  - Retry with exponential backoff (100ms → 200ms → 400ms → 32s max)
+  - Max 5 retries before escalation
+- **Permanent Errors** (validation failures, unsupported file types):
+  - Log error details + user context
+  - Return user-friendly error message
+  - Flag for manual review
+- **Circuit Breaker** (repeated failures to external services):
+  - After 3 consecutive failures: Enter 30-second break mode
+  - Attempt recovery; if success, return to normal
+  - If failure persists: Degrade to manual review mode
 
 ---
 
