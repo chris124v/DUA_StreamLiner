@@ -1,4 +1,7 @@
 # Proyecto DUA StreamLiner
+
+![DUA Streamliner](Images/dua-streamliner-logo.png)
+
 The preparation of the Single Administrative Document (DUA) required for import and export procedures in Costa Rica is currently a largely manual task that demands significant time and attention. The information needed to complete the document is usually spread across several sources such as Excel files, Word documents, PDFs, and scanned images like invoices or certificates. Since these documents often come from different companies and follow varying structures and formats, extracting and organizing the required data becomes a complex process. This forces customs specialists to spend considerable time reviewing documents, interpreting information, and manually transferring data into the official DUA template, increasing the risk of mistakes or inconsistencies.
 
 To improve this process, we propose the development of DUA Streamliner, a system designed to automate much of the work involved in generating the DUA. The system will allow users to simply provide a folder containing all related documents, which will then be processed using tools capable of reading different file formats, extracting text from PDFs, and applying OCR to scanned images. Through AI-based semantic analysis specialized in customs terminology, the system will detect relevant data such as importer details, product information, values, and transport data, and automatically place it into the corresponding fields of the official DUA template defined by the Ministry of Finance. The system will generate a pre-filled Word document and highlight fields that may require verification, enabling experts to focus mainly on reviewing and confirming the information rather than completing the document from scratch.
@@ -6,8 +9,6 @@ To improve this process, we propose the development of DUA Streamliner, a system
 ## Authors
  * Isaac Villalobos Bonilla, 2024124285
  * Christopher Daniel Vargas Villalta, 2024108443
-   
-Project 1 Software Design. 
 
 ---
 ## Workflow
@@ -1063,9 +1064,4 @@ Implementation: [`src/backend/api/routers/logout_router.py`](src/backend/api/rou
 - [Backend pyproject.toml](src/pyproject.toml) - Python dependencies
 - [Backend Dockerfile](src/Dockerfile) - Container configuration
 - [Environment Variables](src/.env.example) - Environment template
-
-
----
-
-# 3. Data Design
 
