@@ -1,6 +1,28 @@
 # Proyecto DUA StreamLiner
 
-![DUA Streamliner](Images/dua-streamliner-logo.png)
+<p align="center">
+  <img src="Images/dua-streamliner-logo.png" alt="DUA Streamliner" width="50%">
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/REACT-19.2-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React 19.2">
+  <img src="https://img.shields.io/badge/TYPESCRIPT-5.9-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript 5.9">
+  <img src="https://img.shields.io/badge/PYTHON-3.12-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.12">
+  <img src="https://img.shields.io/badge/FASTAPI-0.115-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI 0.115">
+  <img src="https://img.shields.io/badge/POSTGRESQL-16-4169E1?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL 16">
+  <img src="https://img.shields.io/badge/GOOGLE%20CLOUD-GCP-4285F4?style=for-the-badge&logo=googlecloud&logoColor=white" alt="Google Cloud">
+  <img src="https://img.shields.io/badge/VERTEX%20AI-GEMINI-8E75B2?style=for-the-badge&logo=googlegemini&logoColor=white" alt="Vertex AI Gemini">
+  <img src="https://img.shields.io/badge/LANGGRAPH-0.2-1C3C3C?style=for-the-badge&logo=langchain&logoColor=white" alt="LangGraph 0.2">
+  <img src="https://img.shields.io/badge/AUTH0-AUTHENTICATION-EB5424?style=for-the-badge&logo=auth0&logoColor=white" alt="Auth0">
+</p>
+
+<p align="center">
+  <a href="#workflow">Workflow</a> ·
+  <a href="#1-frontend-design">Frontend</a> ·
+  <a href="#2-backend-design">Backend</a> ·
+  <a href="#architecture-diagram-in-layers">Architecture</a> ·
+  <a href="#source-code">Source Code</a>
+</p>
 
 The preparation of the Single Administrative Document (DUA) required for import and export procedures in Costa Rica is currently a largely manual task that demands significant time and attention. The information needed to complete the document is usually spread across several sources such as Excel files, Word documents, PDFs, and scanned images like invoices or certificates. Since these documents often come from different companies and follow varying structures and formats, extracting and organizing the required data becomes a complex process. This forces customs specialists to spend considerable time reviewing documents, interpreting information, and manually transferring data into the official DUA template, increasing the risk of mistakes or inconsistencies.
 
